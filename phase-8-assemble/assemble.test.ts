@@ -114,7 +114,8 @@ test("Phase 8: CSV and JSON export all 30 rows and round-trip", () => {
   const rows = parseProcessedCsv(csv);
   assert.equal(rows.length, 30);
   assert.equal(json.leads.length, 30);
-  assert.ok(OUTPUT_COLUMNS.every((column) => csv.startsWith("lead_id") && csv.includes(column)));
+  assert.ok(csv.startsWith("\uFEFFlead_id"));
+  assert.ok(OUTPUT_COLUMNS.every((column) => csv.includes(column)));
   assert.equal(rows.find((row) => row.lead_id === "L028")?.outreach, "");
   assert.equal(rows.find((row) => row.lead_id === "L029")?.email, "");
   assert.equal(toCsv(result.leads).split("\n").length, 31);

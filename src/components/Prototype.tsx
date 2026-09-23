@@ -462,7 +462,9 @@ function OutputView({ result }: { result: PipelineResult }) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => download("skillcase_leads_enriched.csv", toCsv(result.leads, OUTPUT_COLUMNS), "text/csv")}
+            onClick={() =>
+              download("skillcase_leads_enriched.csv", toCsv(result.leads, OUTPUT_COLUMNS), "text/csv;charset=utf-8")
+            }
             className="rounded-lg bg-ink px-3 py-2 text-sm text-white"
           >
             Download CSV

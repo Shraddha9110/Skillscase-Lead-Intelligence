@@ -19,7 +19,7 @@ export interface ClassificationHint {
   confidence: number;
 }
 
-export interface ReviewedLead extends EnrichedLead, QualityReview {
+export interface ReviewedLead extends Omit<EnrichedLead, "pipelineStep">, QualityReview {
   relevant?: Relevance;
   reason?: string;
   confidence?: number;

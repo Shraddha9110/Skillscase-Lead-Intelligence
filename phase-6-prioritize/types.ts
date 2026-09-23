@@ -20,7 +20,7 @@ export interface PriorityResult {
   breakdown: ScoreBreakdown;
 }
 
-export interface PrioritizedLead extends ReviewedLead, PriorityResult {
+export interface PrioritizedLead extends Omit<ReviewedLead, "pipelineStep" | "relevant" | "reason">, PriorityResult {
   relevant: Relevance | string;
   reason: string;
   dialSuppressed: boolean;

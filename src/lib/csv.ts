@@ -84,10 +84,13 @@ export function toCsv(rows: object[], columns: string[]): string {
     if (/[",\n]/.test(text)) return `"${text.replace(/"/g, '""')}"`;
     return text;
   };
-  return [
-    columns.join(","),
-    ...rows.map((row) => columns.map((col) => escape((row as Record<string, unknown>)[col])).join(","))
-  ].join("\n");
+  return (
+    "\uFEFF" +
+    [
+      columns.join(","),
+      ...rows.map((row) => columns.map((col) => escape((row as Record<string, unknown>)[col])).join(","))
+    ].join("\n")
+  );
 }
 
 export const OUTPUT_COLUMNS = [

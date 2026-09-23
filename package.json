@@ -2,11 +2,14 @@
   "name": "skillcase-lead-intelligence",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <23"
+  },
   "description": "AI-assisted workflow that turns messy Skillcase B2C leads into structured, actionable sales information.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --hostname 0.0.0.0 --port ${PORT:-3000}",
     "process": "npx tsx scripts/process.ts",
     "test:phase1": "node --import tsx --test phase-1-ingest/ingest.test.ts",
     "test:phase2": "node --import tsx --test phase-2-clean/clean.test.ts",

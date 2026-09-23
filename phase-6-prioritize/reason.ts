@@ -1,5 +1,21 @@
 import type { Relevance } from "../phase-3-classify/types";
-import type { ReviewedLead } from "../phase-5-qc/types";
+import type { Signals } from "../phase-4-enrich/types";
+
+type ReasonLead = {
+  lead_id?: string;
+  city?: string;
+  education?: string;
+  german_level?: string;
+  experience?: string;
+  displayName?: string;
+  goal?: string;
+  conversation?: string;
+  signals: Signals;
+  missingFields: string[];
+  isDuplicate: boolean;
+  duplicateOf: string | null;
+  confidence?: number;
+};
 
 const GENERIC_REASON =
   /nursing profile with a germany|outside healthcare or a non-germany|allied health or a critical field|gemini did not supply/i;
@@ -15,7 +31,7 @@ function clipConversation(text: string): string {
   return clause.split(/\s+/).filter(Boolean).slice(0, 14).join(" ");
 }
 
-export function leadDetails(lead: ReviewedLead): string[] {
+export function leadDetails(lead: ReasonLead): string[] {
   const details = [
     lead.city,
     lead.education,
@@ -34,7 +50,7 @@ export function leadDetails(lead: ReviewedLead): string[] {
   return [...new Set(details)];
 }
 
-export function reasonCitesLead(reason: string, lead: ReviewedLead): boolean {
+export function reasonCitesLead(reason: string, lead: ReasonLead): boolean {
   const hay = reason.toLowerCase();
   const city = lead.city?.toLowerCase();
   const education = lead.education?.toLowerCase();
@@ -51,7 +67,7 @@ export function reasonCitesLead(reason: string, lead: ReviewedLead): boolean {
   return leadDetails(lead).some((detail) => detail.length >= 5 && hay.includes(detail.toLowerCase()));
 }
 
-export function buildLeadReason(lead: ReviewedLead, relevant: Relevance | string): string {
+export function buildLeadReason(lead: ReasonLead, relevant: Relevance | string): string {
   const name = lead.displayName?.split(/\s+/)[0] || lead.lead_id;
   const city = lead.city || "an unlisted city";
   const edu = lead.education || "an unlisted qualification";
@@ -94,7 +110,7 @@ export function buildLeadReason(lead: ReviewedLead, relevant: Relevance | string
   return `${name} is a ${edu} professional in ${city}${german}. Conversation: “${hook}”.`;
 }
 
-export function finalizeReason(lead: ReviewedLead, relevant: Relevance | string, incoming?: string): string {
+export function finalizeReason(lead: ReasonLead, relevant: Relevance | string, incoming?: string): string {
   if (lead.isDuplicate) return `Duplicate of ${lead.duplicateOf}. Same phone or email as the earlier row.`;
   const supplied = incoming && !GENERIC_REASON.test(incoming) ? incoming.trim() : "";
   if (supplied && reasonCitesLead(supplied, lead)) return supplied;
@@ -110,7 +126,7 @@ export function isModelConfidence(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
-export function judgmentConfidence(lead: ReviewedLead, relevant: Relevance | string): number {
+export function judgmentConfidence(lead: ReasonLead, relevant: Relevance | string): number {
   const s = lead.signals;
   let score = 0.5;
   if (relevant === "Not Relevant") {
@@ -140,7 +156,7 @@ export function judgmentConfidence(lead: ReviewedLead, relevant: Relevance | str
   return Math.round(Math.max(0.2, Math.min(0.97, score)) * 100) / 100;
 }
 
-export function finalizeConfidence(lead: ReviewedLead, relevant: Relevance | string): number {
+export function finalizeConfidence(lead: ReasonLead, relevant: Relevance | string): number {
   if (lead.isDuplicate) return 0;
   if (isModelConfidence(lead.confidence)) return Math.round(lead.confidence * 100) / 100;
   return judgmentConfidence(lead, relevant);

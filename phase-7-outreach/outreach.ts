@@ -2,7 +2,9 @@ import type { PrioritizedLead } from "../phase-6-prioritize/types";
 import { criticOutreach, firstName, wordCount } from "./critic";
 import { MAX_WORDS, MIN_WORDS, type OutreachDraft } from "./types";
 
-export function isOutreachEligible(lead: PrioritizedLead): boolean {
+type OutreachInput = Omit<PrioritizedLead, "pipelineStep">;
+
+export function isOutreachEligible(lead: OutreachInput): boolean {
   return lead.relevant === "Relevant" && !lead.isDuplicate && !lead.dialSuppressed;
 }
 
@@ -10,7 +12,7 @@ function compact(text: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
-function facts(lead: PrioritizedLead) {
+function facts(lead: OutreachInput) {
   const you = firstName(lead.displayName);
   const city = lead.city || "your city";
   const edu = lead.education || "your qualification";
@@ -20,7 +22,7 @@ function facts(lead: PrioritizedLead) {
   return { you, city, edu, german, atGerman, years };
 }
 
-function passesQc(text: string, lead: PrioritizedLead): boolean {
+function passesQc(text: string, lead: OutreachInput): boolean {
   if (criticOutreach(text, lead).length) return false;
   const words = wordCount(text);
   if (words < MIN_WORDS || words > MAX_WORDS) return false;
@@ -30,7 +32,7 @@ function passesQc(text: string, lead: PrioritizedLead): boolean {
   return true;
 }
 
-function draftVariants(lead: PrioritizedLead): string[] {
+function draftVariants(lead: OutreachInput): string[] {
   const s = lead.signals;
   const { you, city, edu, german, atGerman, years } = facts(lead);
   const whatsapp = s.missingEmail
@@ -158,19 +160,19 @@ function draftVariants(lead: PrioritizedLead): string[] {
   ];
 }
 
-export function choosePassingOutreach(lead: PrioritizedLead, variants: string[]): string {
+export function choosePassingOutreach(lead: OutreachInput, variants: string[]): string {
   for (const variant of variants.map(compact)) {
     if (passesQc(variant, lead)) return variant;
   }
   return "";
 }
 
-export function writeOutreach(lead: PrioritizedLead): string {
+export function writeOutreach(lead: OutreachInput): string {
   if (!isOutreachEligible(lead)) return "";
   return choosePassingOutreach(lead, draftVariants(lead));
 }
 
-export function toOutreachDraft(lead: PrioritizedLead): OutreachDraft {
+export function toOutreachDraft(lead: OutreachInput): OutreachDraft {
   const outreach = writeOutreach(lead);
   return {
     outreach,
@@ -181,7 +183,7 @@ export function toOutreachDraft(lead: PrioritizedLead): OutreachDraft {
   };
 }
 
-export function toOutreachedLead(lead: PrioritizedLead) {
+export function toOutreachedLead(lead: OutreachInput) {
   return {
     ...lead,
     ...toOutreachDraft(lead),
@@ -189,7 +191,7 @@ export function toOutreachedLead(lead: PrioritizedLead) {
   };
 }
 
-export function assertOutreachShape(lead: PrioritizedLead, outreach: string): string[] {
+export function assertOutreachShape(lead: OutreachInput, outreach: string): string[] {
   const errors: string[] = [];
   if (!isOutreachEligible(lead)) {
     if (outreach) errors.push(`${lead.lead_id} must have empty outreach.`);

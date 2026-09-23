@@ -10,7 +10,7 @@ export interface OutreachDraft {
   outreachPath: GeminiPath;
 }
 
-export interface OutreachedLead extends PrioritizedLead, OutreachDraft {
+export interface OutreachedLead extends Omit<PrioritizedLead, "pipelineStep">, OutreachDraft {
   pipelineStep: "phase7-outreach";
 }
 

@@ -8,9 +8,17 @@ The raw sheet has **empty cells**, not shifted columns. Empty stays empty. Missi
 
 ## Live
 
-- **Deployed desk:** add the public URL here after deploy
+- **Deployed desk:** https://skillcase-lead-intelligence.onrender.com (set after first Render deploy; free tier cold start can take ~1 minute)
 - Local desk: [http://localhost:3000](http://localhost:3000)
 - Local slides: [http://localhost:3000/presentation](http://localhost:3000/presentation)
+
+### Deploy on Render
+
+This is a Node **web service** (not a static site) because `/api/pipeline` must stay server-side.
+
+1. Open [Render Blueprint](https://dashboard.render.com/blueprint/new) and connect `Shraddha9110/Skillscase-Lead-Intelligence`, or use [Deploy to Render](https://render.com/deploy?repo=https://github.com/Shraddha9110/Skillscase-Lead-Intelligence).
+2. Set `GEMINI_API_KEY` in the Render dashboard. Do not commit `.env`.
+3. `render.yaml` already sets Node 20, `GEMINI_MODEL`, build (`npm ci --include=dev && npm run build`), and start (`npm start`).
 
 ## Run the prototype
 
