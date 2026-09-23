@@ -8,7 +8,14 @@
     "build": "next build",
     "start": "next start",
     "process": "npx tsx scripts/process.ts",
-    "test:phase1": "node --import tsx --test src/phases/phase1/ingest.test.ts"
+    "test:phase1": "node --import tsx --test phase-1-ingest/ingest.test.ts",
+    "test:phase2": "node --import tsx --test phase-2-clean/clean.test.ts",
+    "test:phase3": "node --import tsx --test --test-concurrency=1 phase-3-classify/classify.test.ts phase-3-classify/classify.integration.test.ts",
+    "test:phase4": "node --import tsx --test phase-4-enrich/enrich.test.ts",
+    "test:phase5": "node --import tsx --test phase-5-qc/review.test.ts",
+    "test:phase6": "node --import tsx --test phase-6-prioritize/prioritize.test.ts",
+    "test:phase7": "node --import tsx --test phase-7-outreach/outreach.test.ts",
+    "test:phase8": "node --import tsx --test phase-8-assemble/assemble.test.ts"
   },
   "dependencies": {
     "next": "^14.2.15",

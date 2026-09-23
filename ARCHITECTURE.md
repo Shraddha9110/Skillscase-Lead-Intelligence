@@ -149,6 +149,19 @@ Bands: High >= 70, Medium 45–69, Low < 45. Duplicates are forced Low and never
 
 Build and run the system in this order. A later phase must not start until the previous phase’s contract is satisfied.
 
+Code and a write-up for each built phase live at the project root:
+
+- `phase-1-ingest/`
+- `phase-2-clean/`
+- `phase-3-classify/`
+- `phase-4-enrich/`
+- `phase-5-qc/`
+- `phase-6-prioritize/`
+- `phase-7-outreach/`
+- `phase-8-assemble/`
+
+See `PHASES.md` for a one-page map.
+
 ### Phase 0 — Frame the desk
 
 **Purpose.** Lock ICP, as-of date, and “what good looks like” before touching a model.
@@ -302,13 +315,13 @@ Apply the scorecard from section 5 to cleaned + classified rows. Duplicates inhe
 **Rules**
 
 - Only if `Relevant` and not a duplicate.
-- 80–130 words, WhatsApp/email tone.
+- 50–70 words, WhatsApp/email tone. No repeated sentences. No internal words (on file, row, field, CRM). Over 80 words fails QC and regenerates.
 - Must use this row’s city, qualification, German level, and the objection they actually raised.
 - End with one next step.
 - Empty string otherwise.
 
 **Engine:** template-from-signals (always on) or outreach LLM prompt (optional).  
-**Quality gate:** critic rejects invented rupee amounts and “we guarantee you a job”.
+**Quality gate:** critic rejects invented rupee amounts, job guarantees, unsourced product/employer/eligibility claims, and GNM “you can apply” lines. Review-queue GNM drafts must say we will confirm eligibility.
 
 ---
 

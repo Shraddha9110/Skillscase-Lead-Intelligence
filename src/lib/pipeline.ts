@@ -139,32 +139,13 @@ export function cleanLead(raw: RawLead): CleanLead {
   const invalidFields: string[] = [];
   const qualityFlags: string[] = [];
 
-  if (!looksLikeEmail(row.email) && looksLikeCity(row.email) && looksLikeEducation(row.city)) {
-    row = shiftFrom(row, "email", "notes");
-    repairedFields.push("email→city→education→experience→goal→german_level→source→dates/text");
-    qualityFlags.push("column_shift_missing_email");
+  if (row.email && !looksLikeEmail(row.email)) {
+    invalidFields.push(`email="${row.email}"`);
+    row.email = "";
   }
-
-  if (looksLikeGoal(row.experience) && looksLikeGerman(row.goal) && looksLikeSource(row.german_level)) {
-    const notes = row.conversation;
-    const conversation = row.last_contacted;
-    const lastContacted = row.source;
-    const source = row.german_level;
-    const german = row.goal;
-    const goal = row.experience;
-    row = { ...row, experience: "", goal, german_level: german, source, last_contacted: lastContacted, conversation, notes };
-    repairedFields.push("experience was actually goal; subsequent fields shifted");
-    qualityFlags.push("column_shift_missing_experience");
-  }
-
-  if (looksLikeSource(row.german_level) && looksLikeDate(row.source)) {
-    const notes = row.conversation;
-    const conversation = row.last_contacted;
-    const lastContacted = row.source;
-    const source = row.german_level;
-    row = { ...row, german_level: "", source, last_contacted: lastContacted, conversation, notes };
-    repairedFields.push("german_level contained a traffic source; fields shifted");
-    qualityFlags.push("column_shift_missing_german_level");
+  if (row.german_level && !looksLikeGerman(row.german_level)) {
+    invalidFields.push(`german_level="${row.german_level}"`);
+    row.german_level = "";
   }
 
   if (row.german_level && !looksLikeGerman(row.german_level)) {
@@ -472,7 +453,7 @@ export function enrichLead(lead: CleanLead): Enrichment {
   if (!objections.length) objections.push("No hard objection on file.");
 
   const missing: string[] = [];
-  if (s.missingEmail) missing.push("Valid email address (row was shifted; city was sitting in the email column).");
+  if (s.missingEmail) missing.push("Valid email address. The email cell is empty.");
   if (s.missingGerman) missing.push("Current German level and whether any exam is booked.");
   if (s.missingExperience) missing.push("Years of nursing experience and current workplace.");
   if (s.examNotTaken) missing.push("Which board they want (Goethe/TELC) and target exam month.");
@@ -885,7 +866,7 @@ export async function runPipeline(rawLeads: RawLead[], llm?: LlmConfig | null): 
       { id: "clean", title: "Clean / repair", summary: "Normalise names, dates, degrees; detect shifted columns and missing fields.", count: repairedCount },
       { id: "dedupe", title: "Deduplicate", summary: "Exact and fuzzy matches on phone + email, even when the name is shortened.", count: duplicateCount },
       { id: "classify", title: "Classify", summary: "Relevant / Not Relevant / Uncertain with a reason and confidence.", count: relevantCount },
-      { id: "understand", title: "Understand + enrich", summary: "Profile, intent, needs, objections, opportunity, public Skillcase sources." },
+      { id: "understand", title: "Understand + enrich", summary: "Profile, intent, needs, objections, opportunity. Sources only when a URL is attached." },
       { id: "qc", title: "Quality control", summary: "Second-pass critic, schema checks, and a human review queue.", count: reviewCount },
       { id: "prioritize", title: "Prioritize", summary: "0–100 score from German level, experience, intent, recency and penalties." },
       { id: "outreach", title: "Personalized outreach", summary: "Messages that reuse the lead’s actual objection — empty for non-relevant and duplicates." }

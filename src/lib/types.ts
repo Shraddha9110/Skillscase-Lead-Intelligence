@@ -1,5 +1,5 @@
-export type Relevance = "Relevant" | "Not Relevant" | "Uncertain";
-export type Priority = "High" | "Medium" | "Low";
+export type Relevance = "Relevant" | "Not Relevant" | "Uncertain" | string;
+export type Priority = "High" | "Medium" | "Low" | "";
 export type PipelineMode = "rules" | "llm";
 
 export interface RawLead {
@@ -92,7 +92,7 @@ export interface ProcessedLead {
   missing_information: string;
   opportunity: string;
   priority: Priority;
-  priority_score: number;
+  priority_score: number | null;
   next_action: string;
   outreach: string;
   is_duplicate: boolean;
@@ -103,6 +103,22 @@ export interface ProcessedLead {
   critic_notes: string;
   sources: string;
   pipeline_mode: PipelineMode;
+}
+
+export interface EvaluationCheck {
+  lead_id: string;
+  dimension: "duplicate" | "relevance" | "intent";
+  notes: string;
+  expected: string;
+  actual: string;
+  match: boolean;
+}
+
+export interface EvaluationResult {
+  checks: EvaluationCheck[];
+  matches: EvaluationCheck[];
+  mismatches: EvaluationCheck[];
+  agreementRate: number;
 }
 
 export interface PipelineStepResult {
@@ -125,6 +141,8 @@ export interface PipelineResult {
   generatedAt: string;
   asOfDate: string;
   mode: PipelineMode;
+  model?: string;
+  evaluation?: EvaluationResult;
   inputCount: number;
   uniquePeople: number;
   relevantCount: number;

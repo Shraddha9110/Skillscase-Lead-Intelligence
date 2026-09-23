@@ -63,7 +63,7 @@ export const OUTREACH_SYSTEM = `Write one WhatsApp/email outreach message for a 
 Return JSON only: { "outreach": "..." }
 
 Rules:
-- 80-130 words.
+- 50-70 words. No repeated sentences. No internal words (on file, row, field, CRM).
 - Use this lead's city, qualification, German level, and the exact worry they raised.
 - Do not just swap the name into a template.
 - No job guarantee. No invented price. No fake employer names.

@@ -78,7 +78,7 @@ export default function PresentationPage() {
     <div className="paper-grid min-h-screen px-6 py-6">
       <div className="mx-auto flex max-w-6xl items-center justify-between">
         <Link href="/" className="text-sm text-muted">
-          ← Prototype
+          ← Back to desk
         </Link>
         <p className="text-sm text-muted">
           {index + 1} / {slides.length} · arrow keys

@@ -51,21 +51,23 @@ test("Phase 1 ingest: does not repair messy cells", () => {
   const { leads } = ingestFromSnapshot(root);
 
   const deepa = byId(leads, "L029");
-  assert.equal(deepa.email, "Chennai");
-  assert.equal(deepa.city, "BSc Nursing");
-  assert.equal(deepa.education, "3 years");
-  assert.equal(deepa.experience, "Work in Germany");
-  assert.equal(deepa.goal, "B2");
-  assert.equal(deepa.german_level, "Website");
+  assert.equal(deepa.email, "");
+  assert.equal(deepa.city, "Chennai");
+  assert.equal(deepa.education, "BSc Nursing");
+  assert.equal(deepa.experience, "3 years");
+  assert.equal(deepa.goal, "Work in Germany");
+  assert.equal(deepa.german_level, "B2");
 
   const arjun = byId(leads, "L007");
-  assert.equal(arjun.experience, "Germany job");
-  assert.equal(arjun.goal, "A2");
-  assert.equal(arjun.german_level, "Facebook");
+  assert.equal(arjun.experience, "");
+  assert.equal(arjun.goal, "Germany job");
+  assert.equal(arjun.german_level, "A2");
 
   const amit = byId(leads, "L005");
-  assert.equal(amit.german_level, "Instagram");
-  assert.equal(amit.source, "2026-09-12");
+  assert.equal(amit.german_level, "");
+  assert.equal(amit.source, "Instagram");
+  assert.equal(amit.last_contacted, "2026-09-12");
+  assert.equal(amit.notes, "Probably irrelevant");
 
   const mohit = byId(leads, "L010");
   assert.equal(mohit.name, "MOHIT SHARMA");
@@ -86,6 +88,11 @@ test("Phase 1 parser: quoted commas stay inside one cell", () => {
   const rows = parseCsv('lead_id,conversation\nL999,"Hello, world, again"\n');
   assert.equal(rows[1][0], "L999");
   assert.equal(rows[1][1], "Hello, world, again");
+});
+
+test("Phase 1 parser: empty cells stay empty and do not shift later columns", () => {
+  const rows = parseCsv("a,b,c,d\n1,,3,4\n");
+  assert.deepEqual(rows[1], ["1", "", "3", "4"]);
 });
 
 test("Phase 1 quality gate fails when a lead_id is missing or duplicated", () => {

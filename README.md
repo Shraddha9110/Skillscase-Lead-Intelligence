@@ -12,20 +12,10 @@ npm run process    # writes data/processed/ for all 30 leads
 npm run dev        # open http://localhost:3000
 ```
 
-- App: [http://localhost:3000](http://localhost:3000)
-- 5-slide presentation: [http://localhost:3000/presentation](http://localhost:3000/presentation)
+- Counsellor desk: [http://localhost:3000](http://localhost:3000)
+- 5-slide presentation (separate page): [http://localhost:3000/presentation](http://localhost:3000/presentation)
 
-`npm run process` is the automatic path. The same pipeline also runs in the browser when you click **Re-run pipeline**.
-
-Optional LLM mode (classification, enrichment, critic, outreach):
-
-```bash
-cp .env.example .env.local
-# add OPENAI_API_KEY
-npm run process
-```
-
-Without a key, a deterministic analyst + rule critic still produces the full dataset. Prompts live in `src/lib/prompts.ts`.
+`npm run process` writes the final dataset. The desk also re-runs the pipeline when you click **Re-run pipeline**.
 
 ## What the workflow does
 
@@ -52,53 +42,24 @@ Raw CSV
 
 Score 0–100. High ≥ 70, Medium 45–69, Low < 45.
 
-| Signal | Points |
-| --- | --- |
-| German B2 / B1 / A2 / A1 / unknown | +28 / +18 / +10 / +6 / +4 |
-| Experience 5y+ / 3–4 / 1–2 / <1 / unknown | +18 / +14 / +10 / +6 / +3 |
-| Call/ready or B2+jobs / process questions / exploring / cannot afford now | +30 / +20 / +12 / +6 |
-| Contacted in last 3 / 6 / 10 days | +10 / +7 / +4 |
-| Missing email, job-guarantee ask, cannot-afford-now | −8 / −4 / −8 |
-
 Duplicates inherit a Low score and never get a second outreach.
 
 ## Quality control
 
-AI output is not auto-accepted. The system uses:
+AI output is not auto-accepted. Four problems the system catches:
 
-1. Duplicate detection on phone/email
-2. Column-shift and field-type validation
-3. Confidence threshold (review if &lt; 0.70)
-4. Schema checks (no outreach for non-relevant; no High for non-relevant; no invented price or job guarantee)
-5. A second critic pass
-6. A human review queue in the UI
-
-Four problems the system catches (more than the required three):
-
-1. **L029 Deepa Krishnan** — city in the email column; seven fields repaired; email still missing; review forced.
+1. **L029 Deepa Krishnan** — city in the email column; seven fields repaired; email still missing.
 2. **L028 Priya S.** — same phone/email as L001 under a shortened name; outreach suppressed.
-3. **L016 Farhan Ali** — CRM says “Different profession”; product lists pharmacists; marked Uncertain.
+3. **L016 Farhan Ali** — CRM says “Different profession”; product lists pharmacists.
 4. **L007 Arjun Nair** — “Germany job” sat in experience; experience left blank on purpose.
-
-After `npm run process` the current sheet is: 30 rows, 27 unique people, 22 unique relevant leads, 3 duplicates, 5 column-shifted rows repaired, 10 rows in the human review queue.
 
 ## Final dataset
 
 All 30 leads: `data/processed/skillcase_leads_enriched.csv` and `.json` (also under `public/data/`).
 
-Columns include Lead, Relevant, Reason, Intent, Profile, Need, Objection, Missing information, Priority, Next action, Outreach, plus QC fields and public sources.
-
 ## Repo map
 
 - `data/raw/skillcase_messy_b2c_leads.csv` — original messy sheet
-- `src/lib/pipeline.ts` — clean, classify, enrich, score, outreach, critic
-- `src/lib/prompts.ts` — LLM prompts (safe to edit in a viva)
-- `src/components/Prototype.tsx` — interactive desk
-- `src/app/presentation/page.tsx` — 5 slides
-
-## Public sources used for enrichment
-
-- https://skillcase.in/ — healthcare German A1–B2, exam prep, career guidance
-- https://skillcase.in/create-account-new — qualification list (includes GNM and pharmacists)
-- https://www.skillcase.info/ — placements, interviews, visa timing
-- https://skillcase.in/blog-view?id=13 — GNM / BSc eligibility notes
+- `phase-1-ingest/` … `phase-8-assemble/` — one folder per phase
+- `src/components/Prototype.tsx` — counsellor desk
+- `src/app/presentation/page.tsx` — 5 slides (not on the home page)

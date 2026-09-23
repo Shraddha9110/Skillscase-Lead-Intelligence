@@ -2,22 +2,27 @@
 
 import { OUTPUT_COLUMNS, toCsv } from "@/lib/csv";
 import { loadRawLeads } from "@/lib/load";
-import { runPipeline } from "@/lib/pipeline";
 import type { PipelineResult, ProcessedLead, RawLead } from "@/lib/types";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-type View = "pipeline" | "leads" | "review" | "output";
+type View = "leads" | "review" | "output" | "pipeline" | "evaluation";
 type Filter = "all" | "relevant" | "not" | "uncertain" | "high" | "review" | "duplicate";
 type Decision = "accepted" | "held" | "rejected";
 
 const rawLeads = loadRawLeads();
 
+function isCallFirst(lead: ProcessedLead, decisions: Record<string, Decision> = {}) {
+  if (lead.priority !== "High" || lead.is_duplicate) return false;
+  if (lead.review_required && decisions[lead.lead_id] !== "accepted") return false;
+  return true;
+}
+
 function badge(value: string) {
   if (value === "High" || value === "Relevant") return "bg-teal-soft text-teal-deep";
   if (value === "Medium" || value === "Uncertain") return "bg-amber-50 text-clay";
   if (value === "Low" || value === "Not Relevant") return "bg-rose-50 text-rose";
-  return "bg-paper text-muted";
+  if (String(value).startsWith("Duplicate of")) return "bg-slate-100 text-muted";
+  return "bg-slate-100 text-muted";
 }
 
 function download(name: string, body: string, type: string) {
@@ -33,7 +38,7 @@ export function Prototype() {
   const [result, setResult] = useState<PipelineResult | null>(null);
   const [running, setRunning] = useState(false);
   const [activeStep, setActiveStep] = useState(-1);
-  const [view, setView] = useState<View>("pipeline");
+  const [view, setView] = useState<View>("leads");
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("L013");
@@ -44,10 +49,16 @@ export function Prototype() {
     setActiveStep(0);
     for (let i = 0; i < 7; i += 1) {
       setActiveStep(i);
-      await new Promise((resolve) => setTimeout(resolve, 220));
+      await new Promise((resolve) => setTimeout(resolve, 160));
     }
-    const next = await runPipeline(rawLeads);
-    setResult(next);
+    try {
+      const response = await fetch("/api/pipeline", { method: "POST" });
+      const next = await response.json();
+      if (!response.ok) throw new Error(next.error || "Pipeline failed");
+      setResult(next);
+    } catch (error) {
+      console.error(error);
+    }
     setRunning(false);
     setActiveStep(-1);
   }
@@ -57,9 +68,17 @@ export function Prototype() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const tabTitle =
+    view === "review" ? "Review" : view === "output" ? "Dataset" : view === "evaluation" ? "Evaluation" : view === "pipeline" ? "Run log" : "Lead list";
+
+  useEffect(() => {
+    document.title = `${tabTitle} · Skillcase desk`;
+  }, [tabTitle]);
+
   const leads = result?.leads || [];
   const selected = leads.find((lead) => lead.lead_id === selectedId) || leads[0];
   const rawSelected = rawLeads.find((lead) => lead.lead_id === selected?.lead_id);
+  const reviewQueue = leads.filter((lead) => lead.review_required);
 
   const filtered = useMemo(() => {
     return leads.filter((lead) => {
@@ -68,67 +87,62 @@ export function Prototype() {
       if (filter === "relevant") return lead.relevant === "Relevant" && !lead.is_duplicate;
       if (filter === "not") return lead.relevant === "Not Relevant";
       if (filter === "uncertain") return lead.relevant === "Uncertain";
-      if (filter === "high") return lead.priority === "High" && !lead.is_duplicate;
+      if (filter === "high") return isCallFirst(lead, decisions);
       if (filter === "review") return lead.review_required;
       if (filter === "duplicate") return lead.is_duplicate;
       return true;
     });
-  }, [leads, filter, query]);
-
-  const reviewQueue = leads.filter((lead) => lead.review_required);
+  }, [leads, filter, query, decisions]);
 
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-20 border-b border-line/80 bg-paper/85 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-5 py-3">
+    <div className="min-h-screen bg-[#f3f5f4] text-ink">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-3">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-teal">Skillcase · B2C</p>
-            <h1 className="font-display text-xl font-semibold tracking-tight">Lead Intelligence</h1>
+            <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-teal">Skillcase desk</p>
+            <h1 className="text-lg font-semibold tracking-tight">{tabTitle}</h1>
           </div>
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="flex flex-wrap items-center gap-1">
             {(
               [
-                ["pipeline", "Pipeline"],
                 ["leads", "Lead list"],
-                ["review", "Quality checks"],
-                ["output", "Final dataset"]
+                ["review", `Review${result ? ` (${reviewQueue.length})` : ""}`],
+                ["output", "Dataset"],
+                ["evaluation", "Evaluation"],
+                ["pipeline", "Run log"]
               ] as const
             ).map(([id, label]) => (
               <button
                 key={id}
                 onClick={() => setView(id)}
-                className={`rounded-full px-3 py-1.5 text-sm ${view === id ? "bg-ink text-card" : "text-muted hover:text-ink"}`}
+                className={`rounded-lg px-3 py-1.5 text-sm ${
+                  view === id ? "bg-ink text-white" : "text-muted hover:bg-slate-100 hover:text-ink"
+                }`}
               >
                 {label}
               </button>
             ))}
-            <Link href="/presentation" className="rounded-full px-3 py-1.5 text-sm text-muted hover:text-ink">
-              5 slides
-            </Link>
           </nav>
-          <div className="flex gap-2">
-            <button
-              onClick={run}
-              disabled={running}
-              className="rounded-full bg-teal px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            >
-              {running ? "Running…" : "Re-run pipeline"}
-            </button>
-          </div>
+          <button
+            onClick={run}
+            disabled={running}
+            className="rounded-lg bg-teal px-3.5 py-2 text-sm font-medium text-white disabled:opacity-60"
+          >
+            {running ? "Running…" : "Re-run pipeline"}
+          </button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-5 py-6">
-        <section className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
-          <Stat label="Input rows" value={result?.inputCount ?? 30} />
-          <Stat label="Unique people" value={result?.uniquePeople ?? "—"} />
+      <main className="mx-auto max-w-[1400px] px-4 py-4">
+        <section className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-6">
+          <Stat label="Rows" value={result?.inputCount ?? 30} />
+          <Stat label="Unique" value={result?.uniquePeople ?? "—"} />
           <Stat label="Relevant" value={result?.relevantCount ?? "—"} />
+          <Stat label="Call first" value={leads.filter((lead) => isCallFirst(lead, decisions)).length || "—"} />
+          <Stat label="Review" value={result?.reviewCount ?? "—"} />
           <Stat label="Duplicates" value={result?.duplicateCount ?? "—"} />
-          <Stat label="Repaired rows" value={result?.repairedCount ?? "—"} />
-          <Stat label="Human review" value={result?.reviewCount ?? "—"} />
         </section>
 
-        {view === "pipeline" && <PipelineView result={result} activeStep={activeStep} rawLeads={rawLeads} />}
         {view === "leads" && (
           <LeadsView
             filtered={filtered}
@@ -143,7 +157,6 @@ export function Prototype() {
         )}
         {view === "review" && (
           <ReviewView
-            result={result}
             reviewQueue={reviewQueue}
             decisions={decisions}
             setDecisions={setDecisions}
@@ -154,6 +167,8 @@ export function Prototype() {
           />
         )}
         {view === "output" && result && <OutputView result={result} />}
+        {view === "evaluation" && result && <EvaluationView result={result} />}
+        {view === "pipeline" && <PipelineView result={result} activeStep={activeStep} running={running} />}
       </main>
     </div>
   );
@@ -161,9 +176,9 @@ export function Prototype() {
 
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-line bg-card px-4 py-3 shadow-card">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{label}</p>
-      <p className="mt-1 font-display text-2xl">{value}</p>
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <p className="text-[11px] uppercase tracking-[0.12em] text-muted">{label}</p>
+      <p className="mt-0.5 text-xl font-semibold">{value}</p>
     </div>
   );
 }
@@ -171,89 +186,49 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 function PipelineView({
   result,
   activeStep,
-  rawLeads
+  running
 }: {
   result: PipelineResult | null;
   activeStep: number;
-  rawLeads: RawLead[];
+  running: boolean;
 }) {
   const steps = result?.steps || [
-    { id: "clean", title: "Clean / repair", summary: "Fix shifted columns, missing fields, inconsistent values." },
+    { id: "clean", title: "Clean / repair", summary: "Keep empty cells empty and flag missing fields." },
     { id: "dedupe", title: "Deduplicate", summary: "Phone + email, including shortened names." },
-    { id: "classify", title: "Classify", summary: "Relevant / Not Relevant / Uncertain." },
-    { id: "understand", title: "Understand + enrich", summary: "Profile, intent, needs, objections, sources." },
-    { id: "qc", title: "Quality control", summary: "Critic, schema checks, review queue." },
-    { id: "prioritize", title: "Prioritize", summary: "0–100 score and High / Medium / Low." },
-    { id: "outreach", title: "Outreach", summary: "Personalized message, or blank if not relevant." }
+    { id: "classify", title: "Classify (Gemini)", summary: "Phase 3 Gemini: Relevant / Not Relevant / Uncertain." },
+    { id: "understand", title: "Enrich", summary: "Profile, intent, needs, objections." },
+    { id: "qc", title: "Quality control", summary: "Critic and review queue." },
+    { id: "prioritize", title: "Prioritize", summary: "0–100 score, High / Medium / Low." },
+    { id: "outreach", title: "Outreach", summary: "Personalized draft, or blank." }
   ];
 
-  const messy = rawLeads.find((l) => l.lead_id === "L029");
-
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-line bg-card p-6 shadow-card">
-        <p className="text-[11px] uppercase tracking-[0.16em] text-teal">Automatic workflow</p>
-        <h2 className="mt-1 font-display text-3xl">Messy sheet in. Actionable list out.</h2>
-        <p className="mt-2 max-w-3xl text-muted">
-          The 30-row Skillcase spreadsheet is cleaned, classified, enriched, scored and drafted for outreach. AI output is
-          not trusted blindly — a second critic plus rules send doubtful rows to a human queue.
-        </p>
-        <div className="mt-6 grid gap-3 md:grid-cols-7">
-          {steps.map((step, index) => (
-            <div
-              key={step.id}
-              className={`rounded-2xl border px-3 py-3 ${
-                activeStep === index ? "border-teal bg-teal-soft" : "border-line bg-paper"
-              }`}
-            >
-              <p className="text-[11px] text-muted">0{index + 1}</p>
-              <p className="font-medium leading-tight">{step.title}</p>
-              <p className="mt-1 text-xs text-muted">{step.summary}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-line bg-card p-5 shadow-card">
-          <h3 className="font-display text-xl">What the sheet actually contained</h3>
-          <p className="mt-1 text-sm text-muted">L029 Deepa Krishnan arrived with the city sitting in the email column.</p>
-          <div className="mt-4 overflow-x-auto text-xs">
-            <table className="w-full min-w-[520px] text-left">
-              <thead className="text-muted">
-                <tr>
-                  {["email", "city", "education", "experience", "goal", "german"].map((h) => (
-                    <th key={h} className="pb-2 font-medium">
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="align-top text-rose">
-                  <td className="pr-3">{messy?.email}</td>
-                  <td className="pr-3">{messy?.city}</td>
-                  <td className="pr-3">{messy?.education}</td>
-                  <td className="pr-3">{messy?.experience}</td>
-                  <td className="pr-3">{messy?.goal}</td>
-                  <td>{messy?.german_level}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className="rounded-3xl border border-line bg-card p-5 shadow-card">
-          <h3 className="font-display text-xl">Relevance and priority, in the open</h3>
-          <ul className="mt-3 space-y-2 text-sm text-muted">
-            {(result?.relevanceCriteria || []).slice(0, 3).map((item) => (
-              <li key={item}>• {item}</li>
-            ))}
-          </ul>
-          <p className="mt-4 text-sm text-muted">
-            High ≥ 70, Medium 45–69, Low &lt; 45. German level, experience, intent, recency, and penalties for missing
-            email or a job-guarantee ask.
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold">Pipeline run log</h2>
+          <p className="text-sm text-muted">
+            {running
+              ? "Running the 30-row sheet now."
+              : result
+                ? `Last run: ${result.mode === "llm" ? "AI" : "rules"} mode · model ${result.model || "unknown"}.`
+                : "Waiting for first run."}
           </p>
         </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-7">
+        {steps.map((step, index) => (
+          <div
+            key={step.id}
+            className={`rounded-lg border px-2.5 py-2 ${
+              activeStep === index ? "border-teal bg-teal-soft" : "border-slate-200 bg-slate-50"
+            }`}
+          >
+            <p className="text-[11px] text-muted">{index + 1}</p>
+            <p className="text-sm font-medium leading-tight">{step.title}</p>
+            <p className="mt-1 text-xs text-muted">{step.summary}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -279,9 +254,9 @@ function LeadsView({
   onSelect: (id: string) => void;
 }) {
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
-      <div className="rounded-3xl border border-line bg-card shadow-card">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-3">
+    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2.5">
           {(
             [
               ["all", "All"],
@@ -296,7 +271,9 @@ function LeadsView({
             <button
               key={id}
               onClick={() => setFilter(id)}
-              className={`rounded-full px-3 py-1 text-xs ${filter === id ? "bg-ink text-card" : "bg-paper text-muted"}`}
+              className={`rounded-md px-2.5 py-1 text-xs ${
+                filter === id ? "bg-ink text-white" : "bg-slate-100 text-muted"
+              }`}
             >
               {label}
             </button>
@@ -305,17 +282,17 @@ function LeadsView({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search name, city, intent"
-            className="ml-auto w-full rounded-full border border-line bg-paper px-3 py-1.5 text-sm sm:w-56"
+            className="ml-auto w-full rounded-md border border-slate-200 bg-white px-3 py-1.5 text-sm sm:w-56"
           />
         </div>
-        <div className="max-h-[680px] overflow-auto">
+        <div className="max-h-[720px] overflow-auto">
           <table className="w-full text-left text-sm">
-            <thead className="sticky top-0 bg-card text-xs uppercase tracking-wider text-muted">
+            <thead className="sticky top-0 bg-slate-50 text-[11px] uppercase tracking-wider text-muted">
               <tr>
-                <th className="px-4 py-3">Lead</th>
+                <th className="px-3 py-2.5">Lead</th>
                 <th>Relevant</th>
                 <th>Priority</th>
-                <th>Intent</th>
+                <th className="pr-3">Next action</th>
               </tr>
             </thead>
             <tbody>
@@ -323,11 +300,11 @@ function LeadsView({
                 <tr
                   key={lead.lead_id}
                   onClick={() => onSelect(lead.lead_id)}
-                  className={`cursor-pointer border-t border-line/70 ${
-                    selected?.lead_id === lead.lead_id ? "bg-teal-soft/60" : "hover:bg-paper"
+                  className={`cursor-pointer border-t border-slate-100 ${
+                    selected?.lead_id === lead.lead_id ? "bg-teal-soft/70" : "hover:bg-slate-50"
                   }`}
                 >
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-2.5">
                     <p className="font-medium">
                       {lead.lead_id} · {lead.name}
                     </p>
@@ -339,11 +316,15 @@ function LeadsView({
                     <span className={`rounded-full px-2 py-0.5 text-xs ${badge(lead.relevant)}`}>{lead.relevant}</span>
                   </td>
                   <td>
-                    <span className={`rounded-full px-2 py-0.5 text-xs ${badge(lead.priority)}`}>
-                      {lead.priority} {lead.priority_score}
-                    </span>
+                    {lead.is_duplicate || !lead.priority ? (
+                      <span className="text-muted">—</span>
+                    ) : (
+                      <span className={`rounded-full px-2 py-0.5 text-xs ${badge(lead.priority)}`}>
+                        {lead.priority} {lead.priority_score}
+                      </span>
+                    )}
                   </td>
-                  <td className="max-w-[220px] truncate pr-3 text-xs text-muted">{lead.intent}</td>
+                  <td className="max-w-[240px] truncate pr-3 text-xs text-muted">{lead.next_action}</td>
                 </tr>
               ))}
             </tbody>
@@ -352,43 +333,52 @@ function LeadsView({
       </div>
 
       {selected && (
-        <aside className="slide-enter rounded-3xl border border-line bg-card p-5 shadow-card">
-          <p className="text-[11px] uppercase tracking-[0.16em] text-teal">{selected.lead_id}</p>
-          <h3 className="font-display text-2xl">{selected.name}</h3>
+        <aside className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-teal">{selected.lead_id}</p>
+          <h3 className="text-xl font-semibold">{selected.name}</h3>
           <p className="text-sm text-muted">
             {selected.phone} · {selected.email || "email missing"} · {selected.city}
           </p>
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
             <span className={`rounded-full px-2 py-1 ${badge(selected.relevant)}`}>{selected.relevant}</span>
-            <span className={`rounded-full px-2 py-1 ${badge(selected.priority)}`}>
-              {selected.priority} · {selected.priority_score}
+            {selected.is_duplicate || !selected.priority ? (
+              <span className="rounded-full bg-slate-100 px-2 py-1">—</span>
+            ) : (
+              <span className={`rounded-full px-2 py-1 ${badge(selected.priority)}`}>
+                {selected.priority} · {selected.priority_score}
+              </span>
+            )}
+            <span className="rounded-full bg-slate-100 px-2 py-1">
+              Confidence {selected.confidence ? selected.confidence.toFixed(2) : "—"}
             </span>
             {selected.is_duplicate && (
-              <span className="rounded-full bg-paper px-2 py-1">Duplicate of {selected.duplicate_of}</span>
+              <span className="rounded-full bg-slate-100 px-2 py-1">Duplicate of {selected.duplicate_of}</span>
             )}
             {selected.review_required && <span className="rounded-full bg-amber-50 px-2 py-1 text-clay">Needs review</span>}
           </div>
           <Field label="Reason" value={selected.reason} />
           <Field label="Profile" value={selected.profile} />
           <Field label="Intent" value={selected.intent} />
-          <Field label="Need" value={selected.need} />
-          <Field label="Objection" value={selected.objection} />
+          <Field label="Need" value={selected.need || "—"} />
+          <Field label="Objection" value={selected.objection || "—"} />
           <Field label="Missing information" value={selected.missing_information} />
           <Field label="Opportunity" value={selected.opportunity} />
           <Field label="Next action" value={selected.next_action} />
           {selected.outreach ? (
-            <div className="mt-4 rounded-2xl bg-paper p-3 text-sm">
-              <p className="text-[11px] uppercase tracking-[0.14em] text-muted">Outreach</p>
-              <p className="mt-1 whitespace-pre-wrap">{selected.outreach}</p>
+            <div className="mt-3 rounded-lg bg-slate-50 p-3 text-sm">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-muted">Outreach</p>
+              <p className="mt-1 whitespace-pre-wrap leading-relaxed">{selected.outreach}</p>
             </div>
           ) : (
-            <p className="mt-4 text-sm text-muted">No outreach — not relevant, or a duplicate.</p>
+            <p className="mt-3 text-sm text-muted">No outreach — not relevant, or a duplicate.</p>
           )}
-          {selected.sources && <Field label="Public sources used" value={selected.sources} />}
+          {selected.sources && /https?:\/\//.test(selected.sources) && (
+            <Field label="Sources" value={selected.sources} />
+          )}
           {selected.critic_notes && <Field label="Critic / QC" value={selected.critic_notes} />}
-          {rawSelected && rawSelected.email !== selected.email && (
+          {rawSelected && rawSelected.email && selected.email && rawSelected.email !== selected.email && (
             <p className="mt-3 text-xs text-clay">
-              Cleaner repaired this row. Raw email cell was “{rawSelected.email || "empty"}”.
+              Cleaner normalised the email. Raw cell was “{rawSelected.email}”.
             </p>
           )}
         </aside>
@@ -400,84 +390,54 @@ function LeadsView({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="mt-3">
-      <p className="text-[11px] uppercase tracking-[0.14em] text-muted">{label}</p>
+      <p className="text-[11px] uppercase tracking-[0.12em] text-muted">{label}</p>
       <p className="mt-1 text-sm leading-relaxed">{value}</p>
     </div>
   );
 }
 
 function ReviewView({
-  result,
   reviewQueue,
   decisions,
   setDecisions,
   onOpen
 }: {
-  result: PipelineResult | null;
   reviewQueue: ProcessedLead[];
   decisions: Record<string, Decision>;
   setDecisions: (value: Record<string, Decision>) => void;
   onOpen: (id: string) => void;
 }) {
   return (
-    <div className="space-y-5">
-      <div className="rounded-3xl border border-line bg-card p-6 shadow-card">
-        <h2 className="font-display text-3xl">AI output is not auto-accepted</h2>
-        <p className="mt-2 max-w-3xl text-muted">
-          Every row goes through duplicate detection, structured-field validation, confidence thresholds, and a second
-          critic. These are four cases where the system caught a problem instead of trusting the first pass.
-        </p>
+    <div className="rounded-xl border border-slate-200 bg-white">
+      <div className="border-b border-slate-200 px-4 py-3">
+        <h2 className="text-base font-semibold">Human review queue</h2>
+        <p className="text-sm text-muted">Accept, hold, or reject. Nothing here is auto-sent.</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
-        {(result?.qcExamples || []).map((example) => (
-          <article key={example.id} className="rounded-3xl border border-line bg-card p-5 shadow-card">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-clay">{example.leadId}</p>
-            <h3 className="mt-1 font-display text-xl">{example.title}</h3>
-            <p className="mt-3 text-sm">
-              <span className="font-medium">Problem. </span>
-              {example.problem}
-            </p>
-            <p className="mt-2 text-sm text-muted">
-              <span className="font-medium text-ink">How it was handled. </span>
-              {example.handling}
-            </p>
-            <button onClick={() => onOpen(example.leadId)} className="mt-4 text-sm text-teal">
-              Open this lead →
+      <div className="divide-y divide-slate-100">
+        {reviewQueue.map((lead) => (
+          <div key={lead.lead_id} className="flex flex-col gap-3 px-4 py-3 md:flex-row md:items-center">
+            <button onClick={() => onOpen(lead.lead_id)} className="text-left md:w-56">
+              <p className="font-medium">
+                {lead.lead_id} · {lead.name}
+              </p>
+              <p className="text-xs text-muted">{lead.review_reasons || "Flagged by critic"}</p>
             </button>
-          </article>
-        ))}
-      </div>
-      <div className="rounded-3xl border border-line bg-card shadow-card">
-        <div className="border-b border-line px-5 py-4">
-          <h3 className="font-display text-xl">Human review queue</h3>
-          <p className="text-sm text-muted">Accept, hold, or reject. Nothing in this queue is auto-sent.</p>
-        </div>
-        <div className="divide-y divide-line">
-          {reviewQueue.map((lead) => (
-            <div key={lead.lead_id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center">
-              <button onClick={() => onOpen(lead.lead_id)} className="text-left md:w-56">
-                <p className="font-medium">
-                  {lead.lead_id} · {lead.name}
-                </p>
-                <p className="text-xs text-muted">{lead.review_reasons || "Flagged by critic"}</p>
-              </button>
-              <p className="flex-1 text-sm text-muted">{lead.critic_notes || lead.reason}</p>
-              <div className="flex gap-2">
-                {(["accepted", "held", "rejected"] as const).map((decision) => (
-                  <button
-                    key={decision}
-                    onClick={() => setDecisions({ ...decisions, [lead.lead_id]: decision })}
-                    className={`rounded-full px-3 py-1 text-xs capitalize ${
-                      decisions[lead.lead_id] === decision ? "bg-ink text-card" : "bg-paper text-muted"
-                    }`}
-                  >
-                    {decision}
-                  </button>
-                ))}
-              </div>
+            <p className="flex-1 text-sm text-muted">{lead.critic_notes || lead.reason}</p>
+            <div className="flex gap-2">
+              {(["accepted", "held", "rejected"] as const).map((decision) => (
+                <button
+                  key={decision}
+                  onClick={() => setDecisions({ ...decisions, [lead.lead_id]: decision })}
+                  className={`rounded-md px-2.5 py-1 text-xs capitalize ${
+                    decisions[lead.lead_id] === decision ? "bg-ink text-white" : "bg-slate-100 text-muted"
+                  }`}
+                >
+                  {decision}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -485,16 +445,16 @@ function ReviewView({
 
 function OutputView({ result }: { result: PipelineResult }) {
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-card px-5 py-4 shadow-card">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3">
         <div>
-          <h2 className="font-display text-2xl">Final dataset · all 30 leads</h2>
-          <p className="text-sm text-muted">Same file written by `npm run process` into data/processed/.</p>
+          <h2 className="text-base font-semibold">Final dataset · all 30 leads</h2>
+          <p className="text-sm text-muted">Same file as data/processed after `npm run process`.</p>
         </div>
         <div className="flex gap-2">
           <button
             onClick={() => download("skillcase_leads_enriched.csv", toCsv(result.leads, OUTPUT_COLUMNS), "text/csv")}
-            className="rounded-full bg-ink px-4 py-2 text-sm text-card"
+            className="rounded-lg bg-ink px-3 py-2 text-sm text-white"
           >
             Download CSV
           </button>
@@ -502,18 +462,18 @@ function OutputView({ result }: { result: PipelineResult }) {
             onClick={() =>
               download("skillcase_leads_enriched.json", JSON.stringify(result, null, 2), "application/json")
             }
-            className="rounded-full border border-line px-4 py-2 text-sm"
+            className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
           >
             Download JSON
           </button>
         </div>
       </div>
-      <div className="overflow-auto rounded-3xl border border-line bg-card shadow-card">
-        <table className="min-w-[1400px] text-left text-xs">
-          <thead className="bg-paper text-[11px] uppercase tracking-wider text-muted">
+      <div className="overflow-auto rounded-xl border border-slate-200 bg-white">
+        <table className="min-w-[1200px] text-left text-xs">
+          <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-muted">
             <tr>
-              {["Lead", "Relevant", "Reason", "Intent", "Need", "Objection", "Priority", "Next action"].map((h) => (
-                <th key={h} className="px-3 py-3">
+              {["Lead", "Relevant", "Confidence", "Reason", "Intent", "Need", "Objection", "Priority", "Next action", "Outreach"].map((h) => (
+                <th key={h} className="px-3 py-2.5">
                   {h}
                 </th>
               ))}
@@ -521,20 +481,65 @@ function OutputView({ result }: { result: PipelineResult }) {
           </thead>
           <tbody>
             {result.leads.map((lead) => (
-              <tr key={lead.lead_id} className="border-t border-line/70 align-top">
-                <td className="px-3 py-3 font-medium">
+              <tr key={lead.lead_id} className="border-t border-slate-100 align-top">
+                <td className="px-3 py-2.5 font-medium">
                   {lead.lead_id}
                   <div className="font-normal text-muted">{lead.name}</div>
                 </td>
-                <td className="px-3 py-3">{lead.relevant}</td>
-                <td className="max-w-[220px] px-3 py-3">{lead.reason}</td>
-                <td className="max-w-[200px] px-3 py-3">{lead.intent}</td>
-                <td className="max-w-[220px] px-3 py-3">{lead.need}</td>
-                <td className="max-w-[200px] px-3 py-3">{lead.objection}</td>
-                <td className="px-3 py-3">
-                  {lead.priority} ({lead.priority_score})
+                <td className="px-3 py-2.5">{lead.relevant}</td>
+                <td className="px-3 py-2.5">{lead.confidence ? lead.confidence.toFixed(2) : "—"}</td>
+                <td className="max-w-[220px] px-3 py-2.5">{lead.reason}</td>
+                <td className="max-w-[200px] px-3 py-2.5">{lead.intent}</td>
+                <td className="max-w-[220px] px-3 py-2.5">{lead.need || "—"}</td>
+                <td className="max-w-[200px] px-3 py-2.5">{lead.objection || "—"}</td>
+                <td className="px-3 py-2.5">
+                  {lead.is_duplicate || !lead.priority ? "—" : `${lead.priority} (${lead.priority_score})`}
                 </td>
-                <td className="max-w-[200px] px-3 py-3">{lead.next_action}</td>
+                <td className="max-w-[200px] px-3 py-2.5">{lead.next_action}</td>
+                <td className="max-w-[240px] px-3 py-2.5">{lead.outreach || "—"}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function EvaluationView({ result }: { result: PipelineResult }) {
+  const evaluation = result.evaluation;
+  if (!evaluation) {
+    return <p className="text-sm text-muted">No evaluation for this run.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <h2 className="text-base font-semibold">Notes vs pipeline</h2>
+        <p className="text-sm text-muted">
+          Compared duplicates, relevance and intent to the CRM notes column. Agreement {evaluation.agreementRate}% ·{" "}
+          {evaluation.matches.length} matches · {evaluation.mismatches.length} mismatches.
+        </p>
+      </div>
+      <div className="overflow-auto rounded-xl border border-slate-200 bg-white">
+        <table className="min-w-[900px] text-left text-xs">
+          <thead className="bg-slate-50 text-[11px] uppercase tracking-wider text-muted">
+            <tr>
+              {["Lead", "Dimension", "Notes", "Expected", "Actual", "Result"].map((header) => (
+                <th key={header} className="px-3 py-2.5">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {evaluation.checks.map((check) => (
+              <tr key={`${check.lead_id}-${check.dimension}`} className="border-t border-slate-100 align-top">
+                <td className="px-3 py-2.5 font-medium">{check.lead_id}</td>
+                <td className="px-3 py-2.5">{check.dimension}</td>
+                <td className="max-w-[220px] px-3 py-2.5">{check.notes || "—"}</td>
+                <td className="px-3 py-2.5">{check.expected}</td>
+                <td className="px-3 py-2.5">{check.actual}</td>
+                <td className="px-3 py-2.5">{check.match ? "Match" : "Mismatch"}</td>
               </tr>
             ))}
           </tbody>

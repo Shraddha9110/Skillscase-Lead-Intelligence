@@ -44,5 +44,12 @@ export function parseCsv(text: string): string[][] {
     rows.push(row);
   }
 
-  return rows.filter((entry) => entry.some((value) => value.trim() !== ""));
+  const width = rows[0]?.length ?? 0;
+  return rows
+    .filter((entry) => entry.some((value) => value.trim() !== ""))
+    .map((entry) => {
+      const next = entry.slice();
+      while (next.length < width) next.push("");
+      return next.slice(0, width);
+    });
 }
