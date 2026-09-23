@@ -30,6 +30,10 @@ export const PRODUCT_SOURCES = {
   gnm: {
     fact: "A 3-year nursing qualification such as GNM is described as eligible for the Germany nursing pathway, subject to recognition.",
     source: "https://skillcase.in/blog-view?id=13"
+  },
+  zeroRecruit: {
+    fact: "Job-side signup copy says “zero recruitment cost”; language-course fees are a separate conversation and must not be invented.",
+    source: "https://skillcase.in/create-account-new"
   }
 } as const;
 

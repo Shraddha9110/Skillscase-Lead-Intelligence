@@ -78,8 +78,8 @@ Counsellor desk (UI)
         v
   Raw sheet --> Clean store --> Intelligence store --> QC store --> Final dataset
         |
-        +-- Gemini LLM for Phase 3 classification (Google AI / Gemini API)
-        +-- Optional Gemini (or fallback analyst) for enrich, critic, outreach
+        +-- Gemini LLM for Phase 3 classify, Phase 4 enrich, Phase 7 outreach
+        +-- Phase 4 signals / Phase 7 templates only when Gemini fails or quota is hit
 ```
 
 ### Logical stores (the “database”)
@@ -93,7 +93,7 @@ The Google Sheet is the **system of record for input**. The 30-row prototype doe
 | Intelligence | Classification + enrichment + score + draft outreach | In-memory, then processed file |
 | QC | Critic notes, validation errors, review queue | Fields on each processed row |
 | Decisions | Human accept / hold / reject | UI state (later: a table) |
-| Product facts | Sourced Skillcase claims | `src/lib/product.ts` |
+| Product facts | Sourced Skillcase claims | `phase-4-enrich/sources.ts` |
 
 ---
 
@@ -263,7 +263,7 @@ Then fill:
 - Next action
 - Sources (only if a public Skillcase fact was used)
 
-**Engine:** deterministic analyst for the always-on path; optional LLM enrich prompt.  
+**Engine:** Gemini (`ENRICH_SYSTEM` in `src/lib/prompts.ts`) on the desk path, using `phase-3-classify/gemini.ts` retry logic. Phase 4 signals stay **fallback only** when Gemini fails or quota is hit. Each row records `enrichmentPath` (`ai` / `fallback`).  
 **Hard ban:** inventing fees, employers, visas, or a guaranteed job.
 
 **Contract out:** `Enrichment`
@@ -320,8 +320,8 @@ Apply the scorecard from section 5 to cleaned + classified rows. Duplicates inhe
 - End with one next step.
 - Empty string otherwise.
 
-**Engine:** template-from-signals (always on) or outreach LLM prompt (optional).  
-**Quality gate:** critic rejects invented rupee amounts, job guarantees, unsourced product/employer/eligibility claims, and GNM “you can apply” lines. Review-queue GNM drafts must say we will confirm eligibility.
+**Engine:** Gemini (`OUTREACH_SYSTEM` in `src/lib/prompts.ts`) on the desk path, same Gemini client as Phase 3. Phase 7 templates stay **fallback only** when Gemini fails or quota is hit. Each row records `outreachPath` (`ai` / `fallback`).  
+**Quality gate:** every Gemini draft runs through `criticOutreach()`. Fail → regenerate once → still fail → send to review (empty draft). Critic rejects invented rupee amounts, job guarantees, unsourced product/employer/eligibility claims, and GNM “you can apply” lines. Review-queue GNM drafts must say we will confirm eligibility.
 
 ---
 
@@ -375,13 +375,16 @@ Phases 3 and 4 may run in parallel on a cleaned row. Phase 5 must see both. Phas
 
 ## 8. Runtime and interfaces
 
-### Gemini path (Phase 3)
+### Gemini path (Phases 3, 4, 7)
 
-Phase 3 calls the **Gemini API** with `GEMINI_API_KEY`. The classify prompt lives in one file so a viva can change a requirement without hunting through the UI.
+The desk (`src/lib/runDesk.ts`) is the only pipeline. It calls the **Gemini API** with `GEMINI_API_KEY` for classify, enrich, and outreach. All three reuse `phase-3-classify/gemini.ts`. Classify prompt: `phase-3-classify/prompt.ts`. Enrich and outreach prompts: `src/lib/prompts.ts` (`ENRICH_SYSTEM`, `OUTREACH_SYSTEM`).
 
-If Gemini fails or returns invalid JSON, the row is `Uncertain`, `review_required` is set, and the rest of the pipeline still finishes all 30 rows.
+If Gemini fails or returns invalid JSON:
+- Classify: the row is `Uncertain` + human review (or remaining unique rows use rules if quota is hit).
+- Enrich: Phase 4 signals fill the row; `enrichmentPath` is `fallback`.
+- Outreach: Phase 7 templates fill the row; `outreachPath` is `fallback`. A Gemini draft that fails `criticOutreach` twice is emptied and sent to review.
 
-Phases 4 / 5 / 7 may also use Gemini, or a deterministic analyst, as long as Phase 3 remains a Gemini step.
+The Run log shows per-step mode (AI vs rules/fallback) and the model name.
 
 ### UI path (Phase 8)
 
@@ -391,7 +394,7 @@ The last phase is not export-only. Judges open a **UI page**, run the pipeline, 
 
 | Module | Phase | Responsibility |
 | --- | --- | --- |
-| `product` | 0 | ICP, scorecard, sourced facts |
+| `phase-4-enrich/sources.ts` + scorecard | 0 | Sourced facts and priority rules |
 | `csv` / `load` | 1 | Sheet → `RawLead[]` |
 | `clean` + `dedupe` | 2 | Repair and identity |
 | `classify` | 3 | Relevance via **Gemini LLM** |
@@ -399,8 +402,8 @@ The last phase is not export-only. Judges open a **UI page**, run the pipeline, 
 | `qc` / critic | 5 | Validation + queue |
 | `prioritize` | 6 | Score |
 | `outreach` | 7 | Draft or empty |
-| `pipeline` orchestrator | all | Order, mode, summaries |
-| `prompts` + Gemini client | 3 | Classify (and optionally 4 / 5 / 7) |
+| `runDesk.ts` | all | The one pipeline: order, Gemini, fallbacks, summaries |
+| `prompts.ts` + `phase-3-classify/gemini.ts` | 3 / 4 / 7 | Classify, enrich, and outreach prompts + Gemini client |
 | UI page + `/presentation` | 8 | Counsellor page, review queue, export, slides |
 
 ---

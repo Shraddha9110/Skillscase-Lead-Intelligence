@@ -7,10 +7,10 @@ Skillscase-Lead-Intelligence/
   phase-1-ingest/      Ingest the Google Sheet (do not clean)
   phase-2-clean/       Repair columns, normalise, dedupe
   phase-3-classify/    Gemini: Relevant / Not Relevant / Uncertain
-  phase-4-enrich/      Profile, intent, need, objection, next step
+  phase-4-enrich/      Gemini enrich (signals fallback)
   phase-5-qc/          Critic, gates, human review queue
   phase-6-prioritize/  Score 0–100 → High / Medium / Low
-  phase-7-outreach/    Personalized draft, or empty
+  phase-7-outreach/    Gemini outreach (templates fallback)
   phase-8-assemble/    Final dataset, UI page, 5 slides
 ```
 

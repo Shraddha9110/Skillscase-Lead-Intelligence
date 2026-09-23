@@ -38,6 +38,8 @@ export interface ProcessedLead {
   critic_notes: string;
   sources: string;
   pipeline_mode: "rules" | "llm";
+  enrichment_path: "ai" | "fallback";
+  outreach_path: "ai" | "fallback";
 }
 
 export interface PipelineStep {
@@ -51,6 +53,11 @@ export interface PipelineDataset {
   asOfDate: string;
   mode: "rules" | "llm";
   model: string;
+  stepModes?: {
+    classify: "ai" | "rules";
+    enrich: "ai" | "fallback";
+    outreach: "ai" | "fallback";
+  };
   inputCount: number;
   uniquePeople: number;
   relevantCount: number;
@@ -111,7 +118,9 @@ export const OUTPUT_COLUMNS = [
   "review_required",
   "review_reasons",
   "critic_notes",
-  "sources"
+  "sources",
+  "enrichment_path",
+  "outreach_path"
 ] as const;
 
 export const REQUIRED_TEXT_FIELDS: (keyof ProcessedLead)[] = [

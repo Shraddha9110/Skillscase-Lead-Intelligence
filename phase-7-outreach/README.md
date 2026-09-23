@@ -27,7 +27,7 @@ QC rejects and regenerates if:
 
 L030 is told Skillcase **does not** guarantee a job. L029 stays on WhatsApp because email is still missing. L028 is blank so Priya is not messaged twice.
 
-This phase does not call Gemini.
+Templates stay the always-on fallback. The counsellor desk (`runDesk.ts`) calls Gemini with `OUTREACH_SYSTEM` first, runs every AI draft through `criticOutreach()`, regenerates once on fail, then sends the row to review. `outreachPath` is `ai` or `fallback` (templates only when Gemini fails or quota is hit).
 
 ## Contract
 
@@ -43,7 +43,8 @@ This phase does not call Gemini.
 | --- | --- |
 | `types.ts` | `OutreachDraft`, `OutreachedLead` |
 | `critic.ts` | Word count, repeats, jargon, banned-phrase critic |
-| `outreach.ts` | Per-lead writer with regenerate-on-fail |
+| `outreach.ts` | Template writer with regenerate-on-fail (fallback) |
+| `geminiOutreach.ts` | Desk Gemini drafts + critic + review fallback |
 | `run.ts` | `runPhase7` + quality gate |
 | `outreach.test.ts` | Tests for blanks, personalization, critic |
 
@@ -53,4 +54,4 @@ This phase does not call Gemini.
 npm run test:phase7
 ```
 
-Expected: 17 passed.
+Expected: 18 passed.

@@ -13,6 +13,12 @@ export class GeminiError extends Error {
   }
 }
 
+export function isQuotaError(error: unknown): boolean {
+  if (error instanceof GeminiError && error.status === 429) return true;
+  const message = error instanceof Error ? error.message : String(error);
+  return /429|quota/i.test(message);
+}
+
 let cachedModel = "";
 
 export async function geminiJson<T>(system: string, user: string): Promise<{ data: T; model: string }> {

@@ -5,7 +5,7 @@ import type { ClassificationHint, QualityReview, ReviewedLead } from "./types";
 const PRICE_OR_GUARANTEE = /guarantee you a job|guaranteed job|₹\d|rs\.?\s*\d/i;
 
 function isGnm(lead: EnrichedLead): boolean {
-  return /\bgnm\b/i.test(`${lead.education} ${lead.conversation} ${lead.notes}`);
+  return /\bgnm\b/i.test(`${lead.education} ${lead.conversation}`);
 }
 
 function isNotRelevant(lead: EnrichedLead, classification?: ClassificationHint): boolean {
@@ -39,12 +39,11 @@ export function reviewLead(lead: EnrichedLead, classification?: ClassificationHi
     reviewReasons.push("Missing a primary contact field.");
   }
 
-  const notes = `${lead.notes}`.toLowerCase();
   const education = `${lead.education}`.toLowerCase();
-  if (education.includes("bpharm") && /different profession/.test(notes)) {
-    reviewReasons.push("Allied-health profile; CRM notes may say 'different profession'.");
+  if (education.includes("bpharm") || (lead.signals.healthcare && !lead.signals.nursing)) {
+    reviewReasons.push("Allied-health profile; human should decide the track.");
     criticNotes.push(
-      "CRM note says 'Different profession', but Skillcase signup lists Pharmacists. Human should decide the track — do not auto-discard."
+      "Skillcase signup lists Pharmacists. Human should decide the track — do not auto-discard."
     );
   }
 
@@ -101,7 +100,7 @@ export function reviewLead(lead: EnrichedLead, classification?: ClassificationHi
     }
   }
 
-  if (/guarantee/.test(`${lead.conversation} ${lead.notes}`.toLowerCase()) && /guarantee you a job/i.test(copy)) {
+  if (/guarantee/.test(`${lead.conversation}`.toLowerCase()) && /guarantee you a job/i.test(copy)) {
     validationErrors.push("Guarantee question was not clearly refused.");
   }
 

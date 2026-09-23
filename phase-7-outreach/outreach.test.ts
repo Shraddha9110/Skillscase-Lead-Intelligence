@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { runPhase6FromSnapshot } from "../phase-6-prioritize/run";
 import { criticOutreach, repeatedSentences, wordCount } from "./critic";
+import { acceptGeminiOutreach, outreachReviewFallback } from "./geminiOutreach";
 import { choosePassingOutreach, isOutreachEligible, writeOutreach } from "./outreach";
 import { runPhase7, runPhase7FromSnapshot, validatePhase7 } from "./run";
 import { MAX_WORDS, MIN_WORDS, type OutreachedLead } from "./types";
@@ -172,6 +173,26 @@ test("Phase 7 quality gate fails if a duplicate is messaged", () => {
   const quality = validatePhase7(leads);
   assert.equal(quality.ok, false);
   assert.ok(quality.errors.some((error) => /L028/.test(error)));
+});
+
+test("Phase 7: snapshot drafts record fallback; Gemini critic fail goes to review", () => {
+  const result = runPhase7FromSnapshot();
+  assert.ok(result.leads.every((lead) => lead.outreachPath === "fallback"));
+
+  const kavya = byId(result.leads, "L013");
+  const good = acceptGeminiOutreach(kavya, { outreach: kavya.outreach });
+  assert.equal(good.ok, true);
+
+  const bad = acceptGeminiOutreach(kavya, {
+    outreach: "We guarantee you a job in Germany for ₹50000. Please reply today. Please reply today."
+  });
+  assert.equal(bad.ok, false);
+  if (bad.ok) return;
+  const held = outreachReviewFallback(kavya, bad.flags);
+  assert.equal(held.outreach, "");
+  assert.equal(held.outreachPath, "ai");
+  assert.equal(held.reviewRequired, true);
+  assert.ok(held.reviewReasons.some((reason) => /failed QC after regenerate/i.test(reason)));
 });
 
 test("Phase 7 runPhase7: same contract from Phase 6 output", () => {

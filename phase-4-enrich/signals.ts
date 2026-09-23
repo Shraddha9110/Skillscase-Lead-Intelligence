@@ -8,7 +8,7 @@ const HEALTHCARE = [...NURSING, "bpharm", "pharmacist", "mbbs", "doctor", "physi
 const NON_HEALTHCARE = ["bba", "engineer", "engineering"];
 
 export function extractSignals(lead: CleanLead): Signals {
-  const blob = `${lead.goal} ${lead.conversation} ${lead.notes}`.toLowerCase();
+  const blob = `${lead.goal} ${lead.conversation}`.toLowerCase();
   const edu = compact(lead.education);
   return {
     wantsGermany: /germany/.test(blob) && !/not germany/.test(blob),
@@ -34,7 +34,7 @@ export function extractSignals(lead: CleanLead): Signals {
     jobGuarantee: /guarantee/.test(blob),
     timeline: /timeline|how long|before completing|finish b1/.test(blob),
     documents: /document/.test(blob),
-    icu: /icu/.test(blob),
+    icu: /\bicu\b/.test(blob),
     process: /full process|what skillcase actually provides/.test(blob),
     missingGerman: lead.missingFields.includes("german_level"),
     missingExperience: lead.missingFields.includes("experience"),

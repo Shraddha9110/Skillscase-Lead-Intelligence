@@ -1,8 +1,13 @@
 {
-  "generatedAt": "2026-09-23T19:05:16.922Z",
+  "generatedAt": "2026-09-23T19:36:36.242Z",
   "asOfDate": "2026-09-23",
   "mode": "rules",
   "model": "gemini-flash-latest",
+  "stepModes": {
+    "classify": "rules",
+    "enrich": "fallback",
+    "outreach": "fallback"
+  },
   "inputCount": 30,
   "uniquePeople": 27,
   "relevantCount": 22,
@@ -28,8 +33,8 @@
     },
     {
       "id": "enrich",
-      "title": "Understand + enrich",
-      "summary": "Profile, intent, need, objection, missing info, next step."
+      "title": "Enrich (Gemini)",
+      "summary": "Fallback signals. Configured model: gemini-flash-latest. Gemini failed or quota was hit."
     },
     {
       "id": "qc",
@@ -43,8 +48,8 @@
     },
     {
       "id": "outreach",
-      "title": "Outreach",
-      "summary": "Personalized 50–70 word draft, or empty."
+      "title": "Outreach (Gemini)",
+      "summary": "Fallback templates. Configured model: gemini-flash-latest. Gemini failed or quota was hit."
     },
     {
       "id": "assemble",
@@ -121,7 +126,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L002",
@@ -157,7 +164,9 @@
       "review_reasons": "qualification recognition check needed",
       "critic_notes": "GNM recognition is employer- and state-dependent. Confirm before a long pitch.",
       "sources": "A 3-year nursing qualification such as GNM is described as eligible for the Germany nursing pathway, subject to recognition. — https://skillcase.in/blog-view?id=13 | Signup lists GNM, BSc, Post-Basic BSc, MSc, ANM Nursing, physiotherapists, doctors, pharmacists and dentists. — https://skillcase.in/create-account-new | Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L003",
@@ -193,7 +202,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "After language training, Skillcase cites ~2–3 weeks to interview/offer and another 7–8 weeks for visa/documentation. — https://www.skillcase.info/ | Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L004",
@@ -229,7 +240,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/ | B2 German is commonly required for healthcare careers in Germany; B1 is often the point where job conversations start. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L005",
@@ -265,7 +278,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L006",
@@ -301,7 +316,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L007",
@@ -337,7 +354,9 @@
       "review_reasons": "qualification recognition check needed",
       "critic_notes": "GNM recognition is employer- and state-dependent. Confirm before a long pitch. | Experience is missing. Do not invent years of work.",
       "sources": "A 3-year nursing qualification such as GNM is described as eligible for the Germany nursing pathway, subject to recognition. — https://skillcase.in/blog-view?id=13 | Signup lists GNM, BSc, Post-Basic BSc, MSc, ANM Nursing, physiotherapists, doctors, pharmacists and dentists. — https://skillcase.in/create-account-new | Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L008",
@@ -373,7 +392,9 @@
       "review_reasons": "Duplicate of L001 — same phone or email as an earlier row.",
       "critic_notes": "Same contact details as L001.",
       "sources": "",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L009",
@@ -409,7 +430,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/ | B2 German is commonly required for healthcare careers in Germany; B1 is often the point where job conversations start. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L010",
@@ -445,7 +468,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "After language training, Skillcase cites ~2–3 weeks to interview/offer and another 7–8 weeks for visa/documentation. — https://www.skillcase.info/ | Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L011",
@@ -481,7 +506,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L012",
@@ -517,7 +544,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L013",
@@ -553,7 +582,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L014",
@@ -589,7 +620,9 @@
       "review_reasons": "qualification recognition check needed",
       "critic_notes": "GNM recognition is employer- and state-dependent. Confirm before a long pitch. | L014 asked whether GNM is accepted. Hold for a human qualification check.",
       "sources": "A 3-year nursing qualification such as GNM is described as eligible for the Germany nursing pathway, subject to recognition. — https://skillcase.in/blog-view?id=13 | Signup lists GNM, BSc, Post-Basic BSc, MSc, ANM Nursing, physiotherapists, doctors, pharmacists and dentists. — https://skillcase.in/create-account-new | skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/ | B2 German is commonly required for healthcare careers in Germany; B1 is often the point where job conversations start. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L015",
@@ -625,7 +658,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L016",
@@ -658,10 +693,12 @@
       "duplicate_of": null,
       "quality_flags": "",
       "review_required": true,
-      "review_reasons": "Allied-health profile; CRM notes may say 'different profession'.",
-      "critic_notes": "CRM note says 'Different profession', but Skillcase signup lists Pharmacists. Human should decide the track — do not auto-discard.",
+      "review_reasons": "Allied-health profile; human should decide the track.",
+      "critic_notes": "Skillcase signup lists Pharmacists. Human should decide the track — do not auto-discard.",
       "sources": "Programs are primarily for nurses but also support other healthcare professionals preparing for Germany. — https://skillcase.in/ | Signup lists GNM, BSc, Post-Basic BSc, MSc, ANM Nursing, physiotherapists, doctors, pharmacists and dentists. — https://skillcase.in/create-account-new",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L017",
@@ -697,7 +734,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L018",
@@ -733,7 +772,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "After language training, Skillcase cites ~2–3 weeks to interview/offer and another 7–8 weeks for visa/documentation. — https://www.skillcase.info/ | Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L019",
@@ -769,7 +810,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/ | B2 German is commonly required for healthcare careers in Germany; B1 is often the point where job conversations start. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L020",
@@ -805,7 +848,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L021",
@@ -841,7 +886,9 @@
       "review_reasons": "Duplicate of L004 — same phone or email as an earlier row.",
       "critic_notes": "Same contact details as L004.",
       "sources": "",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L022",
@@ -877,7 +924,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L023",
@@ -913,7 +962,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L024",
@@ -949,7 +1000,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L025",
@@ -985,7 +1038,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "A 3-year nursing qualification such as GNM is described as eligible for the Germany nursing pathway, subject to recognition. — https://skillcase.in/blog-view?id=13 | Signup lists GNM, BSc, Post-Basic BSc, MSc, ANM Nursing, physiotherapists, doctors, pharmacists and dentists. — https://skillcase.in/create-account-new",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L026",
@@ -1021,7 +1076,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L027",
@@ -1057,7 +1114,9 @@
       "review_reasons": "",
       "critic_notes": "",
       "sources": "After language training, Skillcase cites ~2–3 weeks to interview/offer and another 7–8 weeks for visa/documentation. — https://www.skillcase.info/ | Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L028",
@@ -1093,7 +1152,9 @@
       "review_reasons": "Duplicate of L001 — same phone or email as an earlier row.",
       "critic_notes": "Name is 'Priya S.' but phone and email match L001. Fuzzy duplicate, not a new person.",
       "sources": "",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L029",
@@ -1129,7 +1190,9 @@
       "review_reasons": "Missing a primary contact field.",
       "critic_notes": "Email is missing. WhatsApp only until an address is captured.",
       "sources": "skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/ | B2 German is commonly required for healthcare careers in Germany; B1 is often the point where job conversations start. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     },
     {
       "lead_id": "L030",
@@ -1165,7 +1228,9 @@
       "review_reasons": "Job-guarantee expectation risk.",
       "critic_notes": "Lead asked if Skillcase guarantees a job. Hold until a human resets expectations. Do not auto-dial.",
       "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
-      "pipeline_mode": "rules"
+      "pipeline_mode": "rules",
+      "enrichment_path": "fallback",
+      "outreach_path": "fallback"
     }
   ],
   "relevanceCriteria": [

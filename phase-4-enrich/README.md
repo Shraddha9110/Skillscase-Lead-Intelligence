@@ -17,7 +17,7 @@
    - Sources (only when a public Skillcase fact is used, with URL)
 3. Hard ban: no invented fees, employers, visas, or “we guarantee you a job”.
 
-This phase is a deterministic analyst. It does not call Gemini.
+Deterministic signals stay the always-on fallback. The counsellor desk (`runDesk.ts`) calls Gemini with `ENRICH_SYSTEM` first, using the Phase 3 Gemini client, and records `enrichmentPath` (`ai` / `fallback`) on each row.
 
 ## Contract
 
@@ -34,9 +34,10 @@ This phase is a deterministic analyst. It does not call Gemini.
 | `types.ts` | `Enrichment`, `Signals`, `EnrichedLead` |
 | `signals.ts` | Keyword / field signal extraction |
 | `sources.ts` | Sourced Skillcase facts + URLs |
-| `enrich.ts` | Build the sales context |
+| `enrich.ts` | Build the sales context (signal fallback) |
+| `geminiEnrich.ts` | Desk Gemini enrich using `ENRICH_SYSTEM` |
 | `run.ts` | `runPhase4` + quality gate |
-| `enrich.test.ts` | 11 tests |
+| `enrich.test.ts` | Tests including Gemini parse + path |
 
 ## What the tests prove
 
@@ -55,4 +56,4 @@ This phase is a deterministic analyst. It does not call Gemini.
 npm run test:phase4
 ```
 
-Expected: 11 passed.
+Expected: 15 passed.

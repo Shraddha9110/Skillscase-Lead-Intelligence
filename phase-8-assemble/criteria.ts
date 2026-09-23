@@ -17,9 +17,9 @@ export const PIPELINE_STEPS = [
     title: "Classify (Gemini)",
     summary: "Relevant / Not Relevant / Uncertain. Reason cites the lead. Confidence is per-lead, not a category default."
   },
-  { id: "enrich", title: "Understand + enrich", summary: "Profile, intent, need, objection, missing info, next step." },
+  { id: "enrich", title: "Enrich (Gemini)", summary: "AI sales context. Phase 4 signals only if Gemini fails or quota is hit." },
   { id: "qc", title: "Quality control", summary: "Critic, gates, human review queue. Nothing auto-sent." },
   { id: "prioritize", title: "Prioritize", summary: "Score 0–100 and High / Medium / Low." },
-  { id: "outreach", title: "Outreach", summary: "Personalized 50–70 word draft, or empty." },
+  { id: "outreach", title: "Outreach (Gemini)", summary: "AI 50–70 word draft through criticOutreach. Templates only on Gemini failure." },
   { id: "assemble", title: "Assemble + desk", summary: "Final CSV/JSON, counsellor UI, and 5 slides." }
 ];

@@ -50,7 +50,9 @@ export function toProcessedLead(lead: OutreachedLead, mode: "rules" | "llm" = "r
     review_reasons: joinList(lead.reviewReasons),
     critic_notes: joinList(lead.criticNotes),
     sources: joinList(sources),
-    pipeline_mode: mode
+    pipeline_mode: mode,
+    enrichment_path: lead.enrichmentPath || "fallback",
+    outreach_path: lead.outreachPath || "fallback"
   };
 }
 

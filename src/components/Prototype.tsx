@@ -196,11 +196,12 @@ function PipelineView({
     { id: "clean", title: "Clean / repair", summary: "Keep empty cells empty and flag missing fields." },
     { id: "dedupe", title: "Deduplicate", summary: "Phone + email, including shortened names." },
     { id: "classify", title: "Classify (Gemini)", summary: "Phase 3 Gemini: Relevant / Not Relevant / Uncertain." },
-    { id: "understand", title: "Enrich", summary: "Profile, intent, needs, objections." },
+    { id: "enrich", title: "Enrich (Gemini)", summary: "AI sales context; signals only if Gemini fails." },
     { id: "qc", title: "Quality control", summary: "Critic and review queue." },
     { id: "prioritize", title: "Prioritize", summary: "0–100 score, High / Medium / Low." },
-    { id: "outreach", title: "Outreach", summary: "Personalized draft, or blank." }
+    { id: "outreach", title: "Outreach (Gemini)", summary: "AI draft through criticOutreach; templates only on quota." }
   ];
+  const modes = result?.stepModes;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">
@@ -211,7 +212,9 @@ function PipelineView({
             {running
               ? "Running the 30-row sheet now."
               : result
-                ? `Last run: ${result.mode === "llm" ? "AI" : "rules"} mode · model ${result.model || "unknown"}.`
+                ? modes
+                  ? `Last run: Classify ${modes.classify === "ai" ? "AI" : "rules"} · Enrich ${modes.enrich === "ai" ? "AI" : "fallback"} · Outreach ${modes.outreach === "ai" ? "AI" : "fallback"} · model ${result.model || "unknown"}.`
+                  : `Last run: ${result.mode === "llm" ? "AI" : "rules"} mode · model ${result.model || "unknown"}.`
                 : "Waiting for first run."}
           </p>
         </div>
@@ -355,6 +358,12 @@ function LeadsView({
               <span className="rounded-full bg-slate-100 px-2 py-1">Duplicate of {selected.duplicate_of}</span>
             )}
             {selected.review_required && <span className="rounded-full bg-amber-50 px-2 py-1 text-clay">Needs review</span>}
+            <span className="rounded-full bg-slate-100 px-2 py-1">
+              Enrich {selected.enrichment_path === "ai" ? "AI" : "fallback"}
+            </span>
+            <span className="rounded-full bg-slate-100 px-2 py-1">
+              Outreach {selected.outreach_path === "ai" ? "AI" : "fallback"}
+            </span>
           </div>
           <Field label="Reason" value={selected.reason} />
           <Field label="Profile" value={selected.profile} />
@@ -370,7 +379,7 @@ function LeadsView({
               <p className="mt-1 whitespace-pre-wrap leading-relaxed">{selected.outreach}</p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-muted">No outreach — not relevant, or a duplicate.</p>
+            <p className="mt-3 text-sm text-muted">No outreach — not relevant, a duplicate, or held for review.</p>
           )}
           {selected.sources && /https?:\/\//.test(selected.sources) && (
             <Field label="Sources" value={selected.sources} />

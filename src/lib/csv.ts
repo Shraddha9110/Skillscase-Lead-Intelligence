@@ -121,5 +121,7 @@ export const OUTPUT_COLUMNS = [
   "review_required",
   "review_reasons",
   "critic_notes",
-  "sources"
+  "sources",
+  "enrichment_path",
+  "outreach_path"
 ];

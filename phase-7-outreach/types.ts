@@ -1,10 +1,13 @@
 import type { PrioritizedLead } from "../phase-6-prioritize/types";
 
+export type GeminiPath = "ai" | "fallback";
+
 export interface OutreachDraft {
   outreach: string;
   outreachEligible: boolean;
   wordCount: number;
   criticFlags: string[];
+  outreachPath: GeminiPath;
 }
 
 export interface OutreachedLead extends PrioritizedLead, OutreachDraft {

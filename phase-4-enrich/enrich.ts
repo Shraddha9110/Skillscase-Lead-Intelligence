@@ -235,26 +235,36 @@ export function blankEnrichment(nextAction = ""): Enrichment {
   };
 }
 
+export function attachEnrichment(
+  lead: CleanLead,
+  enrichment: Enrichment,
+  path: EnrichedLead["enrichmentPath"]
+): EnrichedLead {
+  const signals = extractSignals(lead);
+  const next = { ...enrichment };
+  if (signals.nonHealthcare || signals.wantsCanada || signals.wantsUk) {
+    next.needs = "";
+    next.nextAction = NOT_A_FIT_NOTE;
+    next.opportunity = "Do not sell. This lead is not a Skillcase fit.";
+  }
+  return {
+    ...lead,
+    ...next,
+    signals,
+    enrichmentPath: path,
+    pipelineStep: "phase4-enrich"
+  };
+}
+
 export function toEnrichedLead(lead: CleanLead): EnrichedLead {
   if (lead.isDuplicate) {
     return {
       ...lead,
       ...blankEnrichment(`Merge into ${lead.duplicateOf} and suppress this ID from the dialer.`),
       signals: extractSignals(lead),
+      enrichmentPath: "fallback",
       pipelineStep: "phase4-enrich"
     };
   }
-  const enrichment = enrichLead(lead);
-  const signals = extractSignals(lead);
-  if (signals.nonHealthcare || signals.wantsCanada || signals.wantsUk) {
-    enrichment.needs = "";
-    enrichment.nextAction = NOT_A_FIT_NOTE;
-    enrichment.opportunity = "Do not sell. This lead is not a Skillcase fit.";
-  }
-  return {
-    ...lead,
-    ...enrichment,
-    signals,
-    pipelineStep: "phase4-enrich"
-  };
+  return attachEnrichment(lead, enrichLead(lead), "fallback");
 }

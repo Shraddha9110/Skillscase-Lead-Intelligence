@@ -103,6 +103,8 @@ export interface ProcessedLead {
   critic_notes: string;
   sources: string;
   pipeline_mode: PipelineMode;
+  enrichment_path: "ai" | "fallback";
+  outreach_path: "ai" | "fallback";
 }
 
 export interface EvaluationCheck {
@@ -137,11 +139,18 @@ export interface QcExample {
   severity: "high" | "medium" | "low";
 }
 
+export interface PipelineStepModes {
+  classify: "ai" | "rules";
+  enrich: "ai" | "fallback";
+  outreach: "ai" | "fallback";
+}
+
 export interface PipelineResult {
   generatedAt: string;
   asOfDate: string;
   mode: PipelineMode;
   model?: string;
+  stepModes?: PipelineStepModes;
   evaluation?: EvaluationResult;
   inputCount: number;
   uniquePeople: number;

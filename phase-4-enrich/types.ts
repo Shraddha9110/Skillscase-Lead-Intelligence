@@ -42,8 +42,11 @@ export interface Enrichment {
   sources: string[];
 }
 
+export type GeminiPath = "ai" | "fallback";
+
 export interface EnrichedLead extends CleanLead, Enrichment {
   signals: Signals;
+  enrichmentPath: GeminiPath;
   pipelineStep: "phase4-enrich";
 }
 

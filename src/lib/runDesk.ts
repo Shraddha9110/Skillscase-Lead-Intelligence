@@ -3,14 +3,56 @@ import { getGeminiApiKey, getGeminiModel, loadEnv } from "../../phase-3-classify
 import { markDuplicates } from "../../phase-2-clean/dedupe";
 import { cleanLead } from "../../phase-2-clean/clean";
 import { toEnrichedLead } from "../../phase-4-enrich/enrich";
+import { enrichLeadWithGemini } from "../../phase-4-enrich/geminiEnrich";
+import type { EnrichedLead } from "../../phase-4-enrich/types";
 import { runPhase5 } from "../../phase-5-qc/run";
 import type { ClassificationHint } from "../../phase-5-qc/types";
 import { runPhase6 } from "../../phase-6-prioritize/run";
-import { runPhase7 } from "../../phase-7-outreach/run";
+import { writeOutreachWithGemini } from "../../phase-7-outreach/geminiOutreach";
+import { toOutreachedLead } from "../../phase-7-outreach/outreach";
+import type { OutreachedLead } from "../../phase-7-outreach/types";
 import { assembleDataset } from "../../phase-8-assemble/assemble";
 import { evaluateAgainstNotes } from "./evaluate";
 import { loadRawLeads } from "./load";
-import type { PipelineResult } from "./types";
+import type { PipelineResult, PipelineStepModes } from "./types";
+
+interface GeminiStepResult<T> {
+  lead: T;
+  usedGemini: boolean;
+  quota: boolean;
+}
+
+async function mapWithQuotaStop<T, R extends GeminiStepResult<unknown>>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  fallback: (item: T) => R,
+  label: string
+): Promise<{ results: R[]; usedGemini: number; quotaHit: boolean }> {
+  const results: R[] = [];
+  let usedGemini = 0;
+  let quotaHit = false;
+  const concurrency = 4;
+
+  for (let index = 0; index < items.length; index += concurrency) {
+    if (quotaHit) {
+      for (const item of items.slice(index)) results.push(fallback(item));
+      break;
+    }
+    const batch = items.slice(index, index + concurrency);
+    const classifiedBatch = await Promise.all(batch.map(fn));
+    for (const item of classifiedBatch) {
+      results.push(item);
+      if (item.usedGemini) usedGemini += 1;
+    }
+    console.log(`${label} ${Math.min(index + concurrency, items.length)}/${items.length}`);
+    if (classifiedBatch.every((item) => item.quota)) {
+      quotaHit = true;
+      console.log(`Gemini quota exceeded; remaining ${label.toLowerCase()} use fallback.`);
+    }
+  }
+
+  return { results, usedGemini, quotaHit };
+}
 
 export async function runDeskPipeline(): Promise<PipelineResult> {
   loadEnv();
@@ -18,43 +60,104 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
   const cleaned = markDuplicates(rawLeads.map(cleanLead));
   const apiKey = getGeminiApiKey();
   const classifications: Record<string, ClassificationHint> = {};
+  const stepModes: PipelineStepModes = {
+    classify: "rules",
+    enrich: "fallback",
+    outreach: "fallback"
+  };
   let mode: "rules" | "llm" = "rules";
   let model = "rules";
+  let quotaExhausted = false;
 
   if (apiKey) {
     model = getGeminiModel();
     const unique = cleaned.filter((lead) => !lead.isDuplicate);
-    const concurrency = 4;
-    let usedGemini = 0;
-    for (let index = 0; index < unique.length; index += concurrency) {
-      const batch = unique.slice(index, index + concurrency);
-      const classifiedBatch = await Promise.all(batch.map((lead) => classifyLead(lead)));
-      const quotaHit = classifiedBatch.every(
-        (classified) => classified.model === "fallback" && /429|quota/i.test(classified.reason)
-      );
-      for (const classified of classifiedBatch) {
-        if (classified.model === "fallback") continue;
-        usedGemini += 1;
-        classifications[classified.lead_id] = {
-          relevant: classified.relevant,
-          reason: classified.reason,
-          confidence: classified.confidence
-        };
-      }
-      console.log(`Classified ${Math.min(index + concurrency, unique.length)}/${unique.length} unique leads`);
-      if (quotaHit) {
-        console.log("Gemini quota exceeded; remaining unique leads use rules labels.");
-        break;
-      }
+    const classifyStep = await mapWithQuotaStop(
+      unique,
+      async (lead) => {
+        const classified = await classifyLead(lead);
+        const usedGemini = classified.model !== "fallback";
+        const quota = !usedGemini && /429|quota/i.test(classified.reason);
+        return { lead: classified, usedGemini, quota };
+      },
+      (lead) => ({
+        lead: {
+          ...lead,
+          relevant: "Uncertain" as const,
+          reason: "Gemini quota exceeded; remaining unique leads use rules labels.",
+          confidence: 0,
+          criteria: ["fallback"],
+          reviewRequired: true,
+          reviewReasons: ["Gemini failed; do not auto-accept."],
+          contradictionFlags: [],
+          model: "fallback",
+          pipelineStep: "phase3-gemini" as const
+        },
+        usedGemini: false,
+        quota: true
+      }),
+      "Classified"
+    );
+    for (const item of classifyStep.results) {
+      if (!item.usedGemini) continue;
+      classifications[item.lead.lead_id] = {
+        relevant: item.lead.relevant,
+        reason: item.lead.reason,
+        confidence: item.lead.confidence
+      };
     }
-    mode = usedGemini > 0 ? "llm" : "rules";
-    console.log(`Classify mode: ${mode === "llm" ? "AI" : "rules"} · model ${model} · live labels ${usedGemini}/${unique.length}`);
+    stepModes.classify = classifyStep.usedGemini > 0 ? "ai" : "rules";
+    quotaExhausted = classifyStep.quotaHit;
+    console.log(
+      `Classify mode: ${stepModes.classify === "ai" ? "AI" : "rules"} · model ${model} · live labels ${classifyStep.usedGemini}/${unique.length}`
+    );
   }
 
-  const enriched = cleaned.map(toEnrichedLead);
+  const uniqueClean = cleaned.filter((lead) => !lead.isDuplicate);
+  let enriched: EnrichedLead[];
+  if (apiKey && !quotaExhausted) {
+    const enrichStep = await mapWithQuotaStop(
+      uniqueClean,
+      (lead) => enrichLeadWithGemini(lead),
+      (lead) => ({ lead: toEnrichedLead(lead), usedGemini: false, quota: true }),
+      "Enriched"
+    );
+    const byId = Object.fromEntries(enrichStep.results.map((item) => [item.lead.lead_id, item.lead]));
+    enriched = cleaned.map((lead) => byId[lead.lead_id] || toEnrichedLead(lead));
+    stepModes.enrich = enrichStep.usedGemini > 0 ? "ai" : "fallback";
+    quotaExhausted = quotaExhausted || enrichStep.quotaHit;
+    console.log(
+      `Enrich mode: ${stepModes.enrich === "ai" ? "AI" : "fallback"} · model ${model} · live rows ${enrichStep.usedGemini}/${uniqueClean.length}`
+    );
+  } else {
+    enriched = cleaned.map(toEnrichedLead);
+    console.log(`Enrich mode: fallback · model ${model}`);
+  }
+
   const reviewed = runPhase5(enriched, classifications).leads;
   const prioritized = runPhase6(reviewed).leads;
-  const outreached = runPhase7(prioritized).leads;
+
+  let outreached: OutreachedLead[];
+  const eligible = prioritized.filter((lead) => !lead.isDuplicate && lead.relevant === "Relevant");
+  if (apiKey && !quotaExhausted) {
+    const outreachStep = await mapWithQuotaStop(
+      eligible,
+      (lead) => writeOutreachWithGemini(lead),
+      (lead) => ({ lead: toOutreachedLead(lead), usedGemini: false, quota: true }),
+      "Outreach"
+    );
+    const byId = Object.fromEntries(outreachStep.results.map((item) => [item.lead.lead_id, item.lead]));
+    outreached = prioritized.map((lead) => byId[lead.lead_id] || toOutreachedLead(lead));
+    stepModes.outreach = outreachStep.usedGemini > 0 ? "ai" : "fallback";
+    console.log(
+      `Outreach mode: ${stepModes.outreach === "ai" ? "AI" : "fallback"} · model ${model} · live drafts ${outreachStep.usedGemini}/${eligible.length}`
+    );
+  } else {
+    outreached = prioritized.map(toOutreachedLead);
+    console.log(`Outreach mode: fallback · model ${model}`);
+  }
+
+  mode = stepModes.classify === "ai" || stepModes.enrich === "ai" || stepModes.outreach === "ai" ? "llm" : "rules";
   const dataset = assembleDataset(outreached, new Date().toISOString(), mode, model);
   const evaluation = evaluateAgainstNotes(dataset.leads);
 
@@ -63,22 +166,46 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
     asOfDate: dataset.asOfDate,
     mode,
     model,
+    stepModes,
     inputCount: dataset.inputCount,
     uniquePeople: dataset.uniquePeople,
     relevantCount: dataset.relevantCount,
     reviewCount: dataset.reviewCount,
     repairedCount: 0,
     duplicateCount: dataset.duplicateCount,
-    steps: dataset.steps.map((step) => ({
-      id: step.id,
-      title: step.title,
-      summary:
-        step.id === "classify"
-          ? mode === "llm"
-            ? `AI classification with ${model}. Reason and confidence are per lead.`
-            : `Rules classification. Configured model: ${model}. Reason and confidence are per lead.`
-          : step.summary
-    })),
+    steps: dataset.steps.map((step) => {
+      if (step.id === "classify") {
+        return {
+          ...step,
+          title: "Classify (Gemini)",
+          summary:
+            stepModes.classify === "ai"
+              ? `AI classification with ${model}. Reason and confidence are per lead.`
+              : `Rules classification. Configured model: ${model}. Reason and confidence are per lead.`
+        };
+      }
+      if (step.id === "enrich") {
+        return {
+          ...step,
+          title: "Enrich (Gemini)",
+          summary:
+            stepModes.enrich === "ai"
+              ? `AI enrichment with ${model}. Signals used only if Gemini fails.`
+              : `Fallback signals. Configured model: ${model}. Gemini failed or quota was hit.`
+        };
+      }
+      if (step.id === "outreach") {
+        return {
+          ...step,
+          title: "Outreach (Gemini)",
+          summary:
+            stepModes.outreach === "ai"
+              ? `AI drafts with ${model}, passed through criticOutreach. Failed QC goes to review.`
+              : `Fallback templates. Configured model: ${model}. Gemini failed or quota was hit.`
+        };
+      }
+      return step;
+    }),
     qcExamples: dataset.qcExamples.map((example) => ({ ...example, severity: "high" as const })),
     leads: dataset.leads.map((lead) => ({
       ...lead,

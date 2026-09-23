@@ -176,7 +176,8 @@ export function toOutreachDraft(lead: PrioritizedLead): OutreachDraft {
     outreach,
     outreachEligible: isOutreachEligible(lead),
     wordCount: wordCount(outreach),
-    criticFlags: criticOutreach(outreach, lead)
+    criticFlags: criticOutreach(outreach, lead),
+    outreachPath: "fallback"
   };
 }
 

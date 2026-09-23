@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { enrichLead } from "./enrich";
+import { attachEnrichment, enrichLead, toEnrichedLead } from "./enrich";
+import { parseEnrichment } from "./geminiEnrich";
 import { runPhase4FromSnapshot, validatePhase4 } from "./run";
 import type { EnrichedLead } from "./types";
 
@@ -62,6 +63,15 @@ test("Phase 4: L015 Meera is a nurture, not a push close", () => {
   assert.match(meera.nextAction, /30-day/i);
 });
 
+test("Phase 4: L002 difficult does not match ICU; L009 still does", () => {
+  const leads = runPhase4FromSnapshot().leads;
+  const rahul = byId(leads, "L002");
+  assert.match(rahul.conversation, /difficult/i);
+  assert.equal(rahul.signals.icu, false);
+  assert.doesNotMatch(rahul.profile, /ICU/i);
+  assert.equal(byId(leads, "L009").signals.icu, true);
+});
+
 test("Phase 4: L009 Ritika is a B2 ICU placement conversation", () => {
   const ritika = byId(runPhase4FromSnapshot().leads, "L009");
   assert.match(ritika.profile, /ICU/i);
@@ -112,6 +122,33 @@ test("Phase 4 quality gate fails if a required field is blank", () => {
   const quality = validatePhase4(leads);
   assert.equal(quality.ok, false);
   assert.ok(quality.errors.some((error) => /L001/.test(error)));
+});
+
+test("Phase 4: signal path records fallback; Gemini parse rejects empty fields", () => {
+  const leads = runPhase4FromSnapshot().leads;
+  assert.ok(leads.every((lead) => lead.enrichmentPath === "fallback"));
+  assert.equal(toEnrichedLead(leads[0]).enrichmentPath, "fallback");
+
+  const parsed = parseEnrichment({
+    profile: "Priya is a BSc Nursing professional in Bangalore.",
+    intent: "Wants a Germany pathway.",
+    needs: "Book a counsellor call.",
+    objections: "Cost uncertainty.",
+    missingInformation: "Preferred call time.",
+    opportunity: "Language-plus-pathway sale.",
+    nextAction: "Call this week.",
+    sources: ["Skillcase teaches healthcare-focused German — https://skillcase.in/"]
+  });
+  assert.equal(parsed.intent, "Wants a Germany pathway.");
+  assert.throws(() => parseEnrichment({ profile: "only profile" }), /missing/i);
+
+  const notFit = attachEnrichment(
+    leads.find((lead) => lead.lead_id === "L005")!,
+    { ...parsed, needs: "Sell a nurse course." },
+    "ai"
+  );
+  assert.equal(notFit.needs, "");
+  assert.equal(notFit.enrichmentPath, "ai");
 });
 
 test("Phase 4 enrichLead: public sources include a URL when used", () => {
