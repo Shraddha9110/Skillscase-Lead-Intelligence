@@ -10,6 +10,20 @@ The raw sheet has **empty cells**, not shifted columns. Empty stays empty. Missi
 
 - **Deployed desk:** [https://skillscase-lead-intelligence.onrender.com](https://skillscase-lead-intelligence.onrender.com) (Render free tier; first load can take about a minute)
 
+## Screenshots
+
+**Lead list: ranked leads with reason, priority and next action**
+
+![Lead list](docs/screenshots/lead-list.png)
+
+**Human review queue: nothing is auto-accepted**
+
+![Human review queue](docs/screenshots/review-queue.png)
+
+**Final dataset: all 30 leads with every required column**
+
+![Final dataset](docs/screenshots/dataset.png)
+
 ### Deploy on Render
 
 This is a Node **web service** (not a static site) because `/api/pipeline` must stay server-side.
