@@ -212,9 +212,19 @@ function PipelineView({
             {running
               ? "Running the 30-row sheet now."
               : result
-                ? modes
-                  ? `Last run: Classify ${modes.classify === "ai" ? "AI" : "rules"} · Enrich ${modes.enrich === "ai" ? "AI" : "fallback"} · Outreach ${modes.outreach === "ai" ? "AI" : "fallback"} · model ${result.model || "unknown"}.`
-                  : `Last run: ${result.mode === "llm" ? "AI" : "rules"} mode · model ${result.model || "unknown"}.`
+                ? `${
+                    result.geminiStatus === "missing_key"
+                      ? "Gemini is off: GEMINI_API_KEY is not set on this server."
+                      : result.geminiStatus === "quota"
+                        ? "Gemini quota was hit. Wait, then re-run once."
+                        : result.geminiStatus === "error"
+                          ? "Gemini is configured but returned no live labels."
+                          : ""
+                  }${result.geminiStatus && result.geminiStatus !== "ai" ? " " : ""}Last run: Classify ${
+                    modes?.classify === "ai" ? "AI" : "rules"
+                  } · Enrich ${modes?.enrich === "ai" ? "AI" : "fallback"} · Outreach ${
+                    modes?.outreach === "ai" ? "AI" : "fallback"
+                  } · model ${result.model || "unknown"}.`
                 : "Waiting for first run."}
           </p>
         </div>

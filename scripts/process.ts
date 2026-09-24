@@ -31,6 +31,7 @@ async function main() {
   console.log(`Processed ${result.inputCount} leads`);
   console.log(`Mode: ${result.mode === "llm" ? "AI" : "rules"}`);
   console.log(`Model: ${result.model}`);
+  console.log(`Gemini: ${result.geminiStatus || "unknown"}`);
   console.log(
     `Steps: classify ${steps?.classify === "ai" ? "AI" : "rules"} · enrich ${steps?.enrich === "ai" ? "AI" : "fallback"} · outreach ${steps?.outreach === "ai" ? "AI" : "fallback"}`
   );

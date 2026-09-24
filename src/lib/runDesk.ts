@@ -66,8 +66,9 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
     outreach: "fallback"
   };
   let mode: "rules" | "llm" = "rules";
-  let model = "rules";
+  let model = apiKey ? getGeminiModel() : "none";
   let quotaExhausted = false;
+  let geminiStatus: "ai" | "missing_key" | "quota" | "error" = apiKey ? "ai" : "missing_key";
 
   if (apiKey) {
     model = getGeminiModel();
@@ -111,6 +112,8 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
     console.log(
       `Classify mode: ${stepModes.classify === "ai" ? "AI" : "rules"} · model ${model} · live labels ${classifyStep.usedGemini}/${unique.length}`
     );
+  } else {
+    console.log("Classify mode: rules · GEMINI_API_KEY is missing on this server.");
   }
 
   const uniqueClean = cleaned.filter((lead) => !lead.isDuplicate);
@@ -158,6 +161,17 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
   }
 
   mode = stepModes.classify === "ai" || stepModes.enrich === "ai" || stepModes.outreach === "ai" ? "llm" : "rules";
+  if (!apiKey) geminiStatus = "missing_key";
+  else if (quotaExhausted && mode === "rules") geminiStatus = "quota";
+  else if (mode === "llm") geminiStatus = "ai";
+  else geminiStatus = "error";
+
+  const fallbackWhy = !apiKey
+    ? "GEMINI_API_KEY is not set on this server. Add it in Render → Environment (or local .env), restart, then re-run."
+    : quotaExhausted
+      ? `Gemini quota was hit. Configured model: ${model}. Wait, then re-run once.`
+      : `Gemini did not return live output. Configured model: ${model}.`;
+
   const dataset = assembleDataset(outreached, new Date().toISOString(), mode, model);
   const evaluation = evaluateAgainstNotes(dataset.leads);
 
@@ -167,6 +181,7 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
     mode,
     model,
     stepModes,
+    geminiStatus,
     inputCount: dataset.inputCount,
     uniquePeople: dataset.uniquePeople,
     relevantCount: dataset.relevantCount,
@@ -181,7 +196,7 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
           summary:
             stepModes.classify === "ai"
               ? `AI classification with ${model}. Reason and confidence are per lead.`
-              : `Rules classification. Configured model: ${model}. Reason and confidence are per lead.`
+              : `Rules classification. ${fallbackWhy}`
         };
       }
       if (step.id === "enrich") {
@@ -191,7 +206,7 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
           summary:
             stepModes.enrich === "ai"
               ? `AI enrichment with ${model}. Signals used only if Gemini fails.`
-              : `Fallback signals. Configured model: ${model}. Gemini failed or quota was hit.`
+              : `Fallback signals. ${fallbackWhy}`
         };
       }
       if (step.id === "outreach") {
@@ -201,7 +216,7 @@ export async function runDeskPipeline(): Promise<PipelineResult> {
           summary:
             stepModes.outreach === "ai"
               ? `AI drafts with ${model}, passed through criticOutreach. Failed QC goes to review.`
-              : `Fallback templates. Configured model: ${model}. Gemini failed or quota was hit.`
+              : `Fallback templates. ${fallbackWhy}`
         };
       }
       return step;

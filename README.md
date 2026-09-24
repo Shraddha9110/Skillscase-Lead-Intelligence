@@ -8,7 +8,7 @@ The raw sheet has **empty cells**, not shifted columns. Empty stays empty. Missi
 
 ## Live
 
-- **Deployed desk:** https://skillcase-lead-intelligence.onrender.com (set after first Render deploy; free tier cold start can take ~1 minute)
+- **Deployed desk:** apply the Render Blueprint below, then paste the `*.onrender.com` URL here. Free-tier cold start can take about a minute.
 - Local desk: [http://localhost:3000](http://localhost:3000)
 - Local slides: [http://localhost:3000/presentation](http://localhost:3000/presentation)
 

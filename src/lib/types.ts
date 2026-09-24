@@ -145,12 +145,15 @@ export interface PipelineStepModes {
   outreach: "ai" | "fallback";
 }
 
+export type GeminiRunStatus = "ai" | "missing_key" | "quota" | "error";
+
 export interface PipelineResult {
   generatedAt: string;
   asOfDate: string;
   mode: PipelineMode;
   model?: string;
   stepModes?: PipelineStepModes;
+  geminiStatus?: GeminiRunStatus;
   evaluation?: EvaluationResult;
   inputCount: number;
   uniquePeople: number;
