@@ -9,7 +9,6 @@ The raw sheet has **empty cells**, not shifted columns. Empty stays empty. Missi
 ## Live
 
 - **Deployed desk:** [https://skillscase-lead-intelligence.onrender.com](https://skillscase-lead-intelligence.onrender.com) (Render free tier; first load can take about a minute)
-- **Deployed slides:** [https://skillscase-lead-intelligence.onrender.com/presentation](https://skillscase-lead-intelligence.onrender.com/presentation)
 
 ### Deploy on Render
 
