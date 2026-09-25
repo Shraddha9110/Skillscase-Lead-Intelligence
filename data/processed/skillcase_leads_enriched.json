@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-23T19:56:56.626Z",
+  "generatedAt": "2026-09-25T07:26:09.683Z",
   "asOfDate": "2026-09-23",
   "mode": "rules",
   "model": "gemini-flash-latest",
@@ -29,12 +29,12 @@
     {
       "id": "classify",
       "title": "Classify (Gemini)",
-      "summary": "Rules classification. Configured model: gemini-flash-latest. Reason and confidence are per lead."
+      "summary": "Rules classification. Gemini quota was hit. Configured model: gemini-flash-latest. Wait, then re-run once."
     },
     {
       "id": "enrich",
       "title": "Enrich (Gemini)",
-      "summary": "Fallback signals. Configured model: gemini-flash-latest. Gemini failed or quota was hit."
+      "summary": "Fallback signals. Gemini quota was hit. Configured model: gemini-flash-latest. Wait, then re-run once."
     },
     {
       "id": "qc",
@@ -49,7 +49,7 @@
     {
       "id": "outreach",
       "title": "Outreach (Gemini)",
-      "summary": "Fallback templates. Configured model: gemini-flash-latest. Gemini failed or quota was hit."
+      "summary": "Fallback templates. Gemini quota was hit. Configured model: gemini-flash-latest. Wait, then re-run once."
     },
     {
       "id": "assemble",
@@ -981,17 +981,17 @@
       "conversation": "Experienced nurse with B2. Asked whether Skillcase can help identify suitable employers.",
       "notes": "High intent",
       "relevant": "Relevant",
-      "reason": "Pooja is a BSc Nursing professional in Hyderabad at B2. Conversation: “Experienced nurse with B2”.",
-      "confidence": 0.81,
-      "intent": "Wants a Germany work pathway and is looking for a realistic next step.",
-      "profile": "Pooja Reddy is a BSc Nursing professional in Hyderabad with 8 years. Current language standing: B2. Traffic source: Referral. Last touch 2026-09-21.",
-      "need": "Map the next language or placement step and book a counsellor call.",
+      "reason": "Pooja in Hyderabad already holds B2 as a BSc Nursing and asked about jobs or interviews.",
+      "confidence": 0.84,
+      "intent": "Job-ready: wants vacancies, employers or interview prep, not a beginner language pitch.",
+      "profile": "Pooja Reddy is a BSc Nursing professional in Hyderabad with 8 years. Current language standing: B2 certified. Traffic source: Referral. Last touch 2026-09-21.",
+      "need": "Current nurse vacancies, employer shortlist and interview practice.",
       "objection": "No hard objection on file.",
       "missing_information": "Preferred call time and whether they already hold a passport.",
-      "opportunity": "Language-plus-pathway sale: show A1–B2 structure and the job step that comes after B1/B2.",
+      "opportunity": "Placement-led conversation: employer match, interview prep, documentation. Language is already largely done.",
       "priority": "High",
-      "priority_score": 72,
-      "next_action": "Personalised WhatsApp today, then a counsellor call this week.",
+      "priority_score": 90,
+      "next_action": "Call with a vacancy/interview briefing. Do not lead with A1 course sales.",
       "outreach": "Hi Pooja — you asked whether Skillcase can help identify suitable employers. Skillcase markets employer matching for healthcare roles in Germany. You are an experienced BSc Nursing nurse in Hyderabad at B2. I will not name a hospital I cannot stand behind. Are you open to a 15-minute call this week?",
       "is_duplicate": false,
       "duplicate_of": null,
@@ -999,7 +999,7 @@
       "review_required": false,
       "review_reasons": "",
       "critic_notes": "",
-      "sources": "Skillcase teaches healthcare-focused German from A1 to B2, with TELC/Goethe exam prep and live classes. — https://skillcase.in/ | Skillcase cites 500,000+ healthcare professionals required in Germany by 2030. — https://skillcase.in/",
+      "sources": "skillcase.info markets job search, employer matching, interview support, visa and documentation help for healthcare roles in Germany. — https://www.skillcase.info/ | B2 German is commonly required for healthcare careers in Germany; B1 is often the point where job conversations start. — https://skillcase.in/",
       "pipeline_mode": "rules",
       "enrichment_path": "fallback",
       "outreach_path": "fallback"

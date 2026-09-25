@@ -82,6 +82,12 @@ test("Phase 6: unique Relevant B2 job-ready nurses are High", () => {
   assert.equal(ritika.breakdown.german, 28);
   assert.equal(ritika.breakdown.experience, 18);
   assert.equal(ritika.breakdown.intent, 30);
+  const pooja = byId(leads, "L024");
+  assert.equal(pooja.name, "Pooja Reddy");
+  assert.equal(pooja.breakdown.german, 28);
+  assert.equal(pooja.breakdown.experience, 18);
+  assert.equal(pooja.breakdown.intent, 30);
+  assert.ok((pooja.score ?? 0) >= 88);
 });
 
 test("Phase 6: L013 Kavya is High because she asked for a call tomorrow", () => {

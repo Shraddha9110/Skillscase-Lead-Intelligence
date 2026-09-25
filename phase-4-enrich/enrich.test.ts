@@ -72,6 +72,13 @@ test("Phase 4: L002 difficult does not match ICU; L009 still does", () => {
   assert.equal(byId(leads, "L009").signals.icu, true);
 });
 
+test("Phase 4: L024 Pooja with B2 plus employers is job-ready, not exploring", () => {
+  const pooja = byId(runPhase4FromSnapshot().leads, "L024");
+  assert.equal(pooja.signals.hasCertificate, true);
+  assert.equal(pooja.signals.jobsInterview, true);
+  assert.match(pooja.intent, /Job-ready/i);
+});
+
 test("Phase 4: L009 Ritika is a B2 ICU placement conversation", () => {
   const ritika = byId(runPhase4FromSnapshot().leads, "L009");
   assert.match(ritika.profile, /ICU/i);

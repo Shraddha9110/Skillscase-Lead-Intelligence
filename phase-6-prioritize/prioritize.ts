@@ -54,9 +54,10 @@ export function experiencePoints(lead: ReviewedLead): number {
   return EXPERIENCE_POINTS.underOne;
 }
 
-export function intentPoints(signals: Signals): number {
+export function intentPoints(signals: Signals, germanLevel = ""): number {
   if (signals.readyNow || signals.asksCall) return INTENT_POINTS.callOrJobs;
-  if (signals.hasCertificate && signals.jobsInterview) return INTENT_POINTS.callOrJobs;
+  const b2OnFile = signals.hasCertificate || /^b2$/i.test(germanLevel);
+  if (b2OnFile && signals.jobsInterview) return INTENT_POINTS.callOrJobs;
   if (signals.process || signals.documents || signals.timeline || signals.gnmQuestion || signals.eligibility) {
     return INTENT_POINTS.processOrEligibility;
   }
@@ -125,7 +126,7 @@ export function prioritizeLead(lead: ReviewedLead, relevant = inferRelevance(lea
 
   const german = germanPoints(lead);
   const experience = experiencePoints(lead);
-  const intent = intentPoints(lead.signals);
+  const intent = intentPoints(lead.signals, lead.german_level);
   const recency = recencyPoints(lead.last_contacted);
   const completeness = lead.email && lead.phone ? COMPLETENESS_POINTS : 0;
   const penalty = penaltyPoints(lead.signals);

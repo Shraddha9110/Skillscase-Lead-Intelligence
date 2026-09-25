@@ -29,7 +29,7 @@ export function extractSignals(lead: CleanLead): Signals {
     nervous: /nervous|confidence/.test(blob),
     exploring: /explore|just checking|no timeline|how long b1/.test(blob),
     examNotTaken: /hasn'?t taken the exam/.test(blob),
-    hasCertificate: /already has b2|b2 certified|has b2/.test(blob),
+    hasCertificate: /already has b2|b2 certified|has b2|\bwith b2\b/.test(blob),
     otherCourse: /another german course/.test(blob),
     jobGuarantee: /guarantee/.test(blob),
     timeline: /timeline|how long|before completing|finish b1/.test(blob),
